@@ -65,6 +65,28 @@ The `//go:embed` directive automatically includes all frontend assets from `ui/d
 
 The resulting binary is completely self-contained - no external files needed. You can verify this by moving the binary to a different directory and running it there.
 
+### Using Pre-built Container Images
+
+For easier deployment, you can use the pre-built container images:
+
+```bash
+# Using Docker
+docker run -p 1717:1717 \
+  -e ADMIN_USER=admin \
+  -e ADMIN_PASSWORD=yourpassword \
+  -v $(pwd)/data:/data \
+  ghcr.io/matthewp/lodge:latest
+
+# Using Podman
+podman run -p 1717:1717 \
+  -e ADMIN_USER=admin \
+  -e ADMIN_PASSWORD=yourpassword \
+  -v $(pwd)/data:/data \
+  ghcr.io/matthewp/lodge:latest
+```
+
+The container images are automatically built and published to GitHub Container Registry on every release.
+
 ## Usage
 
 ### Admin Interface
