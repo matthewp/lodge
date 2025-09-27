@@ -23,8 +23,8 @@ A simple, cozy headless CMS with emphasis on ease of deployment. Lodge CMS ships
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd cms
+git clone https://github.com/matthewp/lodge.git
+cd lodge
 ```
 
 2. Install frontend dependencies:
@@ -267,7 +267,7 @@ Lodge CMS embraces simplicity and coziness. We believe content management should
 
 ## License
 
-[License information to be added]
+This project is licensed under the BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 

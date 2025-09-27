@@ -1,5 +1,10 @@
 {
   "name": "lodge-cms",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matthewp/lodge.git"
+  },
+  "homepage": "https://github.com/matthewp/lodge",
   "version": "0.1.0",
   "private": true,
   "type": "module",
