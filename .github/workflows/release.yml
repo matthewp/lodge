@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   build-linux:
@@ -34,11 +35,48 @@ jobs:
         run: |
           CGO_ENABLED=0 go build -o lodge-linux-amd64 .
 
+      - name: Create .deb package
+        run: |
+          # Get version from tag
+          VERSION=${GITHUB_REF_NAME#v}
+
+          # Create debian package structure
+          mkdir -p lodge-deb/DEBIAN
+          mkdir -p lodge-deb/usr/bin
+          mkdir -p lodge-deb/usr/share/doc/lodge
+
+          # Copy binary
+          cp lodge-linux-amd64 lodge-deb/usr/bin/lodge
+          chmod 755 lodge-deb/usr/bin/lodge
+
+          # Create control file
+          cat > lodge-deb/DEBIAN/control <<EOF
+          Package: lodge
+          Version: ${VERSION}
+          Section: web
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Matthew Phillips <matthew@matthewphillips.info>
+          Description: A simple, cozy headless CMS
+           Lodge CMS is a simple headless CMS with emphasis on ease of deployment.
+           Ships as a single binary with embedded web UI and SQLite database.
+          EOF
+
+          # Build the package
+          dpkg-deb --build lodge-deb
+          mv lodge-deb.deb lodge_${VERSION}_amd64.deb
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: lodge-linux-amd64
           path: lodge-linux-amd64
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lodge-deb
+          path: lodge_*_amd64.deb
 
   build-freebsd:
     runs-on: ubuntu-latest
@@ -84,12 +122,30 @@ jobs:
         with:
           name: lodge-freebsd-amd64
 
+      - name: Download .deb artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lodge-deb
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             lodge-linux-amd64
             lodge-freebsd-amd64
+            lodge_*_amd64.deb
           generate_release_notes: true
           draft: false
           prerelease: false
+
+      - name: Publish to GitHub Packages APT
+        run: |
+          # Get version from tag
+          VERSION=${GITHUB_REF_NAME#v}
+
+          # Upload to GitHub Packages APT repository
+          curl -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/vnd.debian.binary-package" \
+            --data-binary "@lodge_${VERSION}_amd64.deb" \
+            "https://uploads.github.com/repos/${{ github.repository }}/packages/debian/pool/main/l/lodge/lodge_${VERSION}_amd64.deb"
