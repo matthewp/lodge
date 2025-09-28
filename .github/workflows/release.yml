@@ -179,27 +179,7 @@ jobs:
             "https://uploads.github.com/repos/${{ github.repository }}/packages/debian/pool/main/l/lodge/lodge_${VERSION}_amd64.deb"
 
       - name: Publish FreeBSD packages to GitHub Pages
-        run: |
-          # Configure git
-          git config --global user.email "action@github.com"
-          git config --global user.name "GitHub Action"
-
-          # Clone or create gh-pages branch
-          git clone --branch gh-pages https://${{ github.token }}@github.com/${{ github.repository }}.git pages-repo || {
-            mkdir pages-repo
-            cd pages-repo
-            git init
-            git checkout -b gh-pages
-            git remote add origin https://${{ github.token }}@github.com/${{ github.repository }}.git
-            cd ..
-          }
-
-          cd pages-repo
-
-          # Copy repository files
-          cp -r ../repo/* .
-
-          # Add and commit
-          git add .
-          git commit -m "Update FreeBSD packages for ${GITHUB_REF_NAME}" || echo "No changes to commit"
-          git push origin gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./repo
