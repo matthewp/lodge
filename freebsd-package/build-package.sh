@@ -23,8 +23,8 @@ sed "s/%%VERSION%%/$VERSION/g" freebsd-package/pkg-manifest.ucl > pkg-manifest.u
 pkg create -M pkg-manifest.ucl -p freebsd-package/pkg-plist -r $STAGEDIR -o .
 
 # Create repository metadata
-mkdir -p repo
-mv lodge-*.pkg repo/
+mkdir -p repo/All
+mv lodge-*.pkg repo/All/
 pkg repo repo/
 
 echo "Package created: lodge-$VERSION.pkg"
