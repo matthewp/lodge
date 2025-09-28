@@ -1,21 +1,27 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+
+	flag "github.com/spf13/pflag"
 )
+
+// Version information set at build time
+var version = "dev"
 
 func main() {
 	var adminUser string
 	var adminPassword string
 	var dataDir string
+	var showVersion bool
 
-	flag.StringVar(&adminUser, "admin-user", "", "Admin username for initial setup")
-	flag.StringVar(&adminPassword, "admin-password", "", "Admin password for initial setup")
-	flag.StringVar(&dataDir, "data-dir", ".", "Directory where database will be stored")
+	flag.StringVarP(&adminUser, "admin-user", "u", "", "Admin username for initial setup")
+	flag.StringVarP(&adminPassword, "admin-password", "p", "", "Admin password for initial setup")
+	flag.StringVarP(&dataDir, "data-dir", "d", ".", "Directory where database will be stored")
+	flag.BoolVarP(&showVersion, "version", "v", false, "Show version information")
 
 	// Custom usage function
 	flag.Usage = func() {
@@ -23,6 +29,7 @@ func main() {
 		fmt.Println()
 		fmt.Println("Usage:")
 		fmt.Println("  lodge --admin-user <username> --admin-password <password>")
+		fmt.Println("  lodge -u <username> -p <password>")
 		fmt.Println("  ADMIN_USER=<username> ADMIN_PASSWORD=<password> lodge")
 		fmt.Println()
 		fmt.Println("Flags:")
@@ -34,6 +41,12 @@ func main() {
 	}
 
 	flag.Parse()
+
+	// Handle version flag
+	if showVersion {
+		fmt.Println(version)
+		os.Exit(0)
+	}
 
 	// Check environment variables as fallback
 	if adminUser == "" {

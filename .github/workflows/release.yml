@@ -33,7 +33,13 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          CGO_ENABLED=0 go build -o lodge-linux-amd64 .
+          # Get version info
+          VERSION=${GITHUB_REF_NAME#v}
+
+          # Build with version info
+          CGO_ENABLED=0 go build \
+            -ldflags "-X main.version=${VERSION}" \
+            -o lodge-linux-amd64 .
 
       - name: Create .deb package
         run: |
@@ -100,10 +106,13 @@ jobs:
             npm run build
 
             # Build FreeBSD binary
-            CGO_ENABLED=0 go build -o lodge-freebsd-amd64 .
+            VERSION=${GITHUB_REF_NAME#v}
+
+            CGO_ENABLED=0 go build \
+              -ldflags "-X main.version=${VERSION}" \
+              -o lodge-freebsd-amd64 .
 
             # Build FreeBSD package
-            VERSION=${GITHUB_REF_NAME#v}
             export VERSION
             ./freebsd-package/build-package.sh
 
