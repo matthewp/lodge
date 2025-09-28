@@ -21,6 +21,49 @@ A simple, cozy headless CMS with emphasis on ease of deployment. Lodge CMS ships
 
 ### Installation
 
+#### Package Manager Installation
+
+**Ubuntu/Debian:**
+```bash
+# Add the APT repository
+echo "deb https://github.com/matthewp/lodge/packages/debian stable main" | sudo tee /etc/apt/sources.list.d/lodge.list
+sudo apt update
+sudo apt install lodge
+```
+
+**FreeBSD:**
+```bash
+# Add the package repository
+sudo mkdir -p /usr/local/etc/pkg/repos
+echo 'lodge: {
+  url: "https://matthewp.github.io/lodge",
+  mirror_type: "http",
+  enabled: yes
+}' | sudo tee /usr/local/etc/pkg/repos/lodge.conf
+sudo pkg update
+sudo pkg install lodge
+```
+
+#### Binary Download
+
+Download the latest binary for your platform from the [releases page](https://github.com/matthewp/lodge/releases).
+
+**Linux:**
+```bash
+curl -L -o lodge https://github.com/matthewp/lodge/releases/latest/download/lodge-linux-amd64
+chmod +x lodge
+sudo mv lodge /usr/local/bin/
+```
+
+**FreeBSD:**
+```bash
+curl -L -o lodge https://github.com/matthewp/lodge/releases/latest/download/lodge-freebsd-amd64
+chmod +x lodge
+sudo mv lodge /usr/local/bin/
+```
+
+#### Development Installation
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/matthewp/lodge.git

@@ -1,0 +1,13 @@
+name: "lodge"
+version: "%%VERSION%%"
+origin: "www/lodge"
+comment: "A simple, cozy headless CMS"
+arch: "freebsd:14:x86:64"
+www: "https://github.com/matthewp/lodge"
+maintainer: "matthew@matthewphillips.info"
+prefix: "/usr/local"
+desc: <<EOD
+Lodge CMS is a simple headless CMS with emphasis on ease of deployment.
+Ships as a single binary with embedded web UI and SQLite database.
+Supports Linux and FreeBSD platforms.
+EOD

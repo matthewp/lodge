@@ -102,11 +102,24 @@ jobs:
             # Build FreeBSD binary
             CGO_ENABLED=0 go build -o lodge-freebsd-amd64 .
 
+            # Build FreeBSD package
+            VERSION=${GITHUB_REF_NAME#v}
+            export VERSION
+            ./freebsd-package/build-package.sh
+
       - name: Upload FreeBSD artifact
         uses: actions/upload-artifact@v4
         with:
           name: lodge-freebsd-amd64
           path: lodge-freebsd-amd64
+
+      - name: Upload FreeBSD package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lodge-freebsd-pkg
+          path: |
+            repo/
+            lodge-*.pkg
 
   release:
     needs: [build-linux, build-freebsd]
@@ -127,6 +140,11 @@ jobs:
         with:
           name: lodge-deb
 
+      - name: Download FreeBSD package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lodge-freebsd-pkg
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
@@ -134,6 +152,7 @@ jobs:
             lodge-linux-amd64
             lodge-freebsd-amd64
             lodge_*_amd64.deb
+            lodge-*.pkg
           generate_release_notes: true
           draft: false
           prerelease: false
@@ -149,3 +168,29 @@ jobs:
             -H "Content-Type: application/vnd.debian.binary-package" \
             --data-binary "@lodge_${VERSION}_amd64.deb" \
             "https://uploads.github.com/repos/${{ github.repository }}/packages/debian/pool/main/l/lodge/lodge_${VERSION}_amd64.deb"
+
+      - name: Publish FreeBSD packages to GitHub Pages
+        run: |
+          # Configure git
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+
+          # Clone or create gh-pages branch
+          git clone --branch gh-pages https://${{ github.token }}@github.com/${{ github.repository }}.git pages-repo || {
+            mkdir pages-repo
+            cd pages-repo
+            git init
+            git checkout -b gh-pages
+            git remote add origin https://${{ github.token }}@github.com/${{ github.repository }}.git
+            cd ..
+          }
+
+          cd pages-repo
+
+          # Copy repository files
+          cp -r ../repo/* .
+
+          # Add and commit
+          git add .
+          git commit -m "Update FreeBSD packages for ${GITHUB_REF_NAME}" || echo "No changes to commit"
+          git push origin gh-pages
