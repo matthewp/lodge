@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build frontend
+        run: |
+          npm install
+          npm run build
+
+      - name: Build Linux binary
+        run: |
+          CGO_ENABLED=0 go build -o lodge-linux-amd64 .
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lodge-linux-amd64
+          path: lodge-linux-amd64
+
+  build-freebsd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build in FreeBSD VM
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y go124 npm node22
+
+          run: |
+            # Set Go to use the installed version
+            export PATH=/usr/local/go124/bin:$PATH
+
+            # Build frontend
+            npm install
+            npm run build
+
+            # Build FreeBSD binary
+            CGO_ENABLED=0 go build -o lodge-freebsd-amd64 .
+
+      - name: Upload FreeBSD artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lodge-freebsd-amd64
+          path: lodge-freebsd-amd64
+
+  release:
+    needs: [build-linux, build-freebsd]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lodge-linux-amd64
+
+      - name: Download FreeBSD artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lodge-freebsd-amd64
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            lodge-linux-amd64
+            lodge-freebsd-amd64
+          generate_release_notes: true
+          draft: false
+          prerelease: false
