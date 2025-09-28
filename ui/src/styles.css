@@ -1,3 +1,30 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom utilities for flat design */
+@layer utilities {
+  .input-flat {
+    @apply w-full p-4 border-4 border-gray-400 focus:outline-none focus:border-black font-medium;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-black text-white font-bold text-sm uppercase tracking-wide border-4 border-black hover:bg-gray-800 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white text-black font-bold text-sm uppercase tracking-wide border-4 border-gray-400 hover:border-black transition-colors;
+  }
+
+  .label-flat {
+    @apply block text-sm font-bold text-gray-900 uppercase tracking-wide mb-2;
+  }
+
+  .card-flat {
+    @apply bg-white border-4 border-black p-6;
+  }
+
+  .title-flat {
+    @apply text-3xl font-black text-gray-900 tracking-tight uppercase;
+  }
+}

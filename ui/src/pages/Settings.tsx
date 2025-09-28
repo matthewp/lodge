@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { adminAPI } from '../api/admin';
+import { Icon } from '../components/Icon';
 
 interface APIKey {
   id: number;
@@ -77,237 +78,200 @@ export function Settings() {
 
   return (
     <div>
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            Settings
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Configure your CMS settings and preferences
-          </p>
-        </div>
+      <div className="mb-8 border-b-4 border-gray-300 pb-6">
+        <h2 className="title-flat">Settings</h2>
+        <p className="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">
+          Configure your CMS settings and preferences
+        </p>
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className="space-y-8">
         {/* API Keys Section */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <h3 className="text-lg leading-6 font-medium text-gray-900">
-                  API Keys
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Manage API keys for accessing your content programmatically
-                </p>
+        <div className="card-flat">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-xl font-black text-gray-900 uppercase">
+                API Keys
+              </h3>
+              <p className="mt-1 text-sm text-gray-600 font-medium">
+                Manage API keys for accessing your content via the REST API
+              </p>
+            </div>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="btn-primary"
+            >
+              + New API Key
+            </button>
+          </div>
+
+          {/* Created Key Display */}
+          {createdKey && (
+            <div className="mb-6 p-4 bg-green-50 border-4 border-green-600">
+              <h4 className="text-sm font-black text-green-900 mb-2 uppercase">
+                API Key Created Successfully
+              </h4>
+              <p className="text-sm text-green-700 mb-3 font-medium">
+                Make sure to copy your API key now. You won't be able to see it again!
+              </p>
+              <div className="flex items-center space-x-3">
+                <code className="flex-1 p-3 bg-white border-4 border-green-600 text-green-900 font-mono font-bold">
+                  {createdKey}
+                </code>
+                <button
+                  onClick={() => copyToClipboard(createdKey)}
+                  className={`px-4 py-3 border-4 font-bold uppercase text-sm transition-colors ${
+                    copyState === 'copied'
+                      ? 'border-green-600 bg-green-600 text-white'
+                      : 'border-green-600 text-green-600 hover:bg-green-600 hover:text-white'
+                  }`}
+                >
+                  {copyState === 'copied' ? 'Copied!' : 'Copy'}
+                </button>
               </div>
               <button
-                onClick={() => setShowCreateForm(true)}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                onClick={() => setCreatedKey(null)}
+                className="mt-4 text-sm font-bold text-green-700 hover:text-green-900 uppercase"
               >
-                Create New Key
+                Dismiss
               </button>
             </div>
+          )}
 
-            {/* New Key Created Alert */}
-            {createdKey && (
-              <div className="mb-4 bg-green-50 border border-green-200 rounded-md p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-green-800">
-                      API Key Created Successfully!
-                    </h3>
-                    <div className="mt-2 text-sm text-green-700">
-                      <p className="mb-2">Store this key securely - it won't be shown again:</p>
-                      <div className="bg-white border rounded p-2 font-mono text-xs break-all">
-                        {createdKey}
-                      </div>
-                      <button
-                        onClick={() => copyToClipboard(createdKey)}
-                        className={`mt-2 text-xs underline transition-colors ${
-                          copyState === 'copied'
-                            ? 'text-blue-600 hover:text-blue-700'
-                            : 'text-green-800 hover:text-green-900'
-                        }`}
-                      >
-                        {copyState === 'copied' ? 'Copied!' : 'Copy to clipboard'}
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => setCreatedKey(null)}
-                      className="mt-2 text-green-800 hover:text-green-900 text-xs"
-                    >
-                      ✕ Dismiss
-                    </button>
-                  </div>
+          {/* Create Form */}
+          {showCreateForm && (
+            <div className="mb-6 p-6 bg-gray-50 border-4 border-gray-400">
+              <form onSubmit={handleCreateKey}>
+                <div className="mb-4">
+                  <label className="label-flat">
+                    Key Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newKeyName}
+                    onInput={(e) => setNewKeyName((e.target as HTMLInputElement).value)}
+                    className="input-flat"
+                    placeholder="e.g., Production App"
+                    required
+                  />
+                  <p className="mt-2 text-sm text-gray-600">
+                    A descriptive name to help you identify this key
+                  </p>
                 </div>
-              </div>
-            )}
+                <div className="flex space-x-3">
+                  <button type="submit" className="btn-primary">
+                    Create Key
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setNewKeyName('');
+                    }}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
-            {/* Create Form */}
-            {showCreateForm && (
-              <div className="mb-4 bg-gray-50 border border-gray-200 rounded-md p-4">
-                <form onSubmit={handleCreateKey}>
-                  <div className="flex items-end space-x-3">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Key Name
-                      </label>
-                      <input
-                        type="text"
-                        value={newKeyName}
-                        onInput={(e) => setNewKeyName((e.target as HTMLInputElement).value)}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="e.g., Production Frontend"
-                        required
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      Create
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowCreateForm(false)}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            {/* API Keys List */}
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="text-gray-500">Loading API keys...</div>
-              </div>
-            ) : apiKeys.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-4xl mb-4">🔑</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No API keys yet</h3>
-                <p className="text-gray-500 mb-4">
-                  Create your first API key to start accessing your content programmatically
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Key
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Last Used
-                      </th>
-                      <th className="relative px-6 py-3">
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {apiKeys.map((key) => (
-                      <tr key={key.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{key.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500 font-mono">{key.keyPrefix}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {key.createdAt}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {key.lastUsedAt || 'Never'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button
-                            onClick={() => handleDeleteKey(key.id, key.name)}
-                            className="text-red-600 hover:text-red-900"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              General Settings
-            </h3>
+          {/* Keys List */}
+          {loading ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500 font-bold uppercase">Loading API keys...</p>
+            </div>
+          ) : apiKeys.length === 0 ? (
+            <div className="text-center py-12 border-4 border-gray-300">
+              <Icon name="key" className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <h4 className="text-lg font-black text-gray-900 mb-2 uppercase">No API keys yet</h4>
+              <p className="text-gray-600 mb-6 font-medium">
+                Create your first API key to start using the REST API
+              </p>
+              <button
+                onClick={() => setShowCreateForm(true)}
+                className="btn-primary"
+              >
+                Create First Key
+              </button>
+            </div>
+          ) : (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Site Title
-                </label>
-                <input
-                  type="text"
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  defaultValue="Lodge CMS"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Site Description
-                </label>
-                <textarea
-                  rows={3}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                  defaultValue="A cozy headless CMS"
-                />
-              </div>
+              {apiKeys.map((key) => (
+                <div key={key.id} className="p-4 border-4 border-gray-300 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-black text-lg uppercase">{key.name}</h4>
+                    <p className="text-sm text-gray-600 mt-1">
+                      <span className="font-bold uppercase">Key:</span>{' '}
+                      <code className="font-mono font-bold">{key.keyPrefix}...</code>
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      <span className="font-bold uppercase">Created:</span>{' '}
+                      {new Date(key.createdAt).toLocaleDateString()}
+                      {key.lastUsedAt && (
+                        <>
+                          {' | '}
+                          <span className="font-bold uppercase">Last used:</span>{' '}
+                          {new Date(key.lastUsedAt).toLocaleDateString()}
+                        </>
+                      )}
+                    </p>
+                    <div className="mt-2">
+                      <span className={`inline-block px-2 py-1 text-xs font-black uppercase border-2 ${
+                        key.isActive
+                          ? 'border-green-600 text-green-600'
+                          : 'border-red-600 text-red-600'
+                      }`}>
+                        {key.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteKey(key.id, key.name)}
+                    className="px-4 py-2 border-4 border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-colors uppercase"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
 
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              Database
-            </h3>
-            <div className="bg-gray-50 p-4 rounded-md">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-gray-900">
-                    SQLite Database Connected
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Database file: lodge.db
-                  </p>
-                </div>
-              </div>
+        {/* Usage Instructions */}
+        <div className="card-flat">
+          <h3 className="text-xl font-black text-gray-900 mb-4 uppercase">API Usage</h3>
+          <div className="space-y-4">
+            <div>
+              <h4 className="font-bold text-gray-900 uppercase mb-2">Authentication</h4>
+              <p className="text-gray-700 mb-2">Include your API key in the request header:</p>
+              <code className="block p-4 bg-gray-100 border-4 border-gray-400 font-mono text-sm">
+                X-API-Key: your-api-key-here
+              </code>
+            </div>
+            <div>
+              <h4 className="font-bold text-gray-900 uppercase mb-2">Example Request</h4>
+              <code className="block p-4 bg-gray-100 border-4 border-gray-400 font-mono text-sm whitespace-pre">
+{`curl -H "X-API-Key: your-api-key-here" \\
+  https://your-domain.com/api/collections/blog-posts`}
+              </code>
+            </div>
+            <div>
+              <h4 className="font-bold text-gray-900 uppercase mb-2">Available Endpoints</h4>
+              <ul className="space-y-2 font-mono text-sm">
+                <li className="p-2 border-2 border-gray-300">
+                  <span className="font-bold">GET</span> /api/collections - List all collections
+                </li>
+                <li className="p-2 border-2 border-gray-300">
+                  <span className="font-bold">GET</span> /api/collections/{'{slug}'} - Get collection items
+                </li>
+                <li className="p-2 border-2 border-gray-300">
+                  <span className="font-bold">GET</span> /api/collections/{'{slug}'}/{'{id}'} - Get specific item
+                </li>
+              </ul>
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-end">
-          <button
-            type="button"
-            className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            Save Settings
-          </button>
         </div>
       </div>
     </div>

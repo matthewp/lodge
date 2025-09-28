@@ -1,2 +1,5 @@
 node_modules/
 ui/dist/
+lodge.db
+lodge.db-shm
+lodge.db-wal

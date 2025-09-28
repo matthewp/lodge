@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'preact/hooks';
 import { adminAPI } from '../api/admin';
+import { Icon } from '../components/Icon';
 
 interface Collection {
   id: number;
@@ -98,12 +99,31 @@ export function Collections() {
     }
   };
 
+  const handleDeleteCollection = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this collection?')) return;
+
+    try {
+      await adminAPI.deleteCollection(id);
+      await loadCollections();
+    } catch (error) {
+      console.error('Failed to delete collection:', error);
+    }
+  };
+
+  const handleManageFields = async (collection: Collection) => {
+    setManagingFields(collection);
+    await loadFields(collection.id);
+  };
+
   const handleCreateField = async (e: Event) => {
     e.preventDefault();
     if (!managingFields || !newField.name.trim() || !newField.label.trim()) return;
 
     try {
-      await adminAPI.createCollectionField(managingFields.id, newField);
+      await adminAPI.createCollectionField(managingFields.id, {
+        ...newField,
+        sortOrder: fields.length
+      });
       setNewField({
         name: '',
         label: '',
@@ -119,226 +139,203 @@ export function Collections() {
     }
   };
 
+  const handleDeleteField = async (fieldId: number) => {
+    if (!confirm('Are you sure you want to delete this field?')) return;
+
+    try {
+      await adminAPI.deleteCollectionField(fieldId);
+      if (managingFields) {
+        await loadFields(managingFields.id);
+      }
+    } catch (error) {
+      console.error('Failed to delete field:', error);
+    }
+  };
+
   const generateSlug = (name: string) => {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   };
 
   if (managingFields) {
     return (
       <div>
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="flex-1 min-w-0">
-            <button
-              onClick={() => setManagingFields(null)}
-              className="text-sm text-indigo-600 hover:text-indigo-500 mb-2"
-            >
-              ← Back to Collections
-            </button>
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-              {managingFields.name} Fields
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Manage the fields for this collection
-            </p>
-          </div>
-          <div className="mt-4 flex md:mt-0 md:ml-4">
-            <button
-              onClick={() => setShowFieldForm(true)}
-              className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              New Field
-            </button>
-          </div>
+        <div className="mb-8 border-b-4 border-gray-300 pb-6">
+          <button
+            onClick={() => setManagingFields(null)}
+            className="text-sm font-bold text-black hover:text-gray-700 mb-4 uppercase tracking-wide"
+          >
+            ← Back to Collections
+          </button>
+          <h2 className="title-flat">
+            {managingFields.name} Fields
+          </h2>
+          <p className="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">
+            Manage the fields for this collection
+          </p>
         </div>
 
-        <div className="mt-8">
+        <div className="space-y-6">
           {showFieldForm && (
-            <div className="mb-6 bg-white overflow-hidden shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                  Create New Field
-                </h3>
-                <form onSubmit={handleCreateField}>
-                  <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Field Name
-                      </label>
+            <div className="card-flat">
+              <h3 className="text-xl font-black text-gray-900 mb-6 uppercase tracking-tight">
+                Create New Field
+              </h3>
+              <form onSubmit={handleCreateField}>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div>
+                    <label className="label-flat">Field Name</label>
+                    <input
+                      type="text"
+                      value={newField.name}
+                      onInput={(e) => setNewField({
+                        ...newField,
+                        name: (e.target as HTMLInputElement).value
+                      })}
+                      className="input-flat"
+                      placeholder="e.g., title"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="label-flat">Label</label>
+                    <input
+                      type="text"
+                      value={newField.label}
+                      onInput={(e) => setNewField({
+                        ...newField,
+                        label: (e.target as HTMLInputElement).value
+                      })}
+                      className="input-flat"
+                      placeholder="e.g., Title"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="label-flat">Type</label>
+                    <select
+                      value={newField.type}
+                      onChange={(e) => setNewField({
+                        ...newField,
+                        type: (e.target as HTMLSelectElement).value
+                      })}
+                      className="input-flat"
+                    >
+                      <option value="text">Text</option>
+                      <option value="textarea">Textarea</option>
+                      <option value="markdown">Markdown</option>
+                      <option value="email">Email</option>
+                      <option value="url">URL</option>
+                      <option value="number">Number</option>
+                      <option value="date">Date</option>
+                      <option value="boolean">Boolean</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="label-flat">Placeholder</label>
+                    <input
+                      type="text"
+                      value={newField.placeholder}
+                      onInput={(e) => setNewField({
+                        ...newField,
+                        placeholder: (e.target as HTMLInputElement).value
+                      })}
+                      className="input-flat"
+                      placeholder="Optional placeholder text"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="label-flat">Default Value</label>
+                    <input
+                      type="text"
+                      value={newField.defaultValue}
+                      onInput={(e) => setNewField({
+                        ...newField,
+                        defaultValue: (e.target as HTMLInputElement).value
+                      })}
+                      className="input-flat"
+                      placeholder="Optional default value"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center">
                       <input
-                        type="text"
-                        value={newField.name}
-                        onInput={(e) => setNewField({
-                          ...newField,
-                          name: (e.target as HTMLInputElement).value
-                        })}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="e.g., title"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Label
-                      </label>
-                      <input
-                        type="text"
-                        value={newField.label}
-                        onInput={(e) => setNewField({
-                          ...newField,
-                          label: (e.target as HTMLInputElement).value
-                        })}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="e.g., Title"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Type
-                      </label>
-                      <select
-                        value={newField.type}
+                        id="required"
+                        type="checkbox"
+                        checked={newField.required}
                         onChange={(e) => setNewField({
                           ...newField,
-                          type: (e.target as HTMLSelectElement).value
+                          required: (e.target as HTMLInputElement).checked
                         })}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      >
-                        <option value="text">Text</option>
-                        <option value="textarea">Textarea</option>
-                        <option value="markdown">Markdown</option>
-                        <option value="email">Email</option>
-                        <option value="url">URL</option>
-                        <option value="number">Number</option>
-                        <option value="date">Date</option>
-                        <option value="boolean">Boolean</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Placeholder
-                      </label>
-                      <input
-                        type="text"
-                        value={newField.placeholder}
-                        onInput={(e) => setNewField({
-                          ...newField,
-                          placeholder: (e.target as HTMLInputElement).value
-                        })}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Optional placeholder text"
+                        className="h-6 w-6 border-4 border-gray-400 text-black focus:ring-0"
                       />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Default Value
+                      <label htmlFor="required" className="ml-3 text-sm font-bold text-gray-900 uppercase">
+                        Required field
                       </label>
-                      <input
-                        type="text"
-                        value={newField.defaultValue}
-                        onInput={(e) => setNewField({
-                          ...newField,
-                          defaultValue: (e.target as HTMLInputElement).value
-                        })}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Optional default value"
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <div className="flex items-center">
-                        <input
-                          id="required"
-                          type="checkbox"
-                          checked={newField.required}
-                          onChange={(e) => setNewField({
-                            ...newField,
-                            required: (e.target as HTMLInputElement).checked
-                          })}
-                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                        />
-                        <label htmlFor="required" className="ml-2 block text-sm text-gray-900">
-                          Required field
-                        </label>
-                      </div>
                     </div>
                   </div>
-                  <div className="mt-6 flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowFieldForm(false)}
-                      className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                    >
-                      Create Field
-                    </button>
-                  </div>
-                </form>
-              </div>
+                </div>
+                <div className="mt-8 flex justify-end space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowFieldForm(false)}
+                    className="btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary">
+                    Create Field
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              {fields.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-gray-400 text-6xl mb-4">🏷️</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No fields yet</h3>
-                  <p className="text-gray-500 mb-6">
-                    Add fields to define the structure of your content
-                  </p>
+          <div className="card-flat">
+            {fields.length === 0 ? (
+              <div className="text-center py-12">
+                <Icon name="tag" className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-black text-gray-900 mb-2 uppercase">No fields yet</h3>
+                <p className="text-gray-600 mb-6 font-medium">
+                  Add fields to define the structure of your content
+                </p>
+                <button
+                  onClick={() => setShowFieldForm(true)}
+                  className="btn-primary"
+                >
+                  Create First Field
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xl font-black uppercase">Fields</h3>
                   <button
                     onClick={() => setShowFieldForm(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200"
+                    className="btn-primary"
                   >
-                    Create First Field
+                    + Add Field
                   </button>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Name
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Label
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Type
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Required
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {fields.map((field) => (
-                        <tr key={field.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {field.name}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {field.label}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {field.type}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {field.required ? 'Yes' : 'No'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                {fields.map((field) => (
+                  <div key={field.id} className="border-4 border-gray-300 p-4 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-lg">{field.label}</h4>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-bold uppercase">Name:</span> {field.name} |{' '}
+                        <span className="font-bold uppercase">Type:</span> {field.type}
+                        {field.required && <span className="ml-2 text-red-600 font-bold">REQUIRED</span>}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteField(field.id)}
+                      className="px-4 py-2 border-4 border-red-500 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-colors uppercase"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -347,266 +344,207 @@ export function Collections() {
 
   return (
     <div>
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="flex-1 min-w-0">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-            Collections
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your content types and their field definitions
-          </p>
-        </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-          >
-            New Collection
-          </button>
-        </div>
+      <div className="mb-8 border-b-4 border-gray-300 pb-6">
+        <h2 className="title-flat">Collections</h2>
+        <p className="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">
+          Manage your content types and their field definitions
+        </p>
       </div>
 
-      <div className="mt-8 space-y-6">
+      <div className="mb-6">
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="btn-primary"
+        >
+          + New Collection
+        </button>
+      </div>
+
+      <div className="space-y-6">
         {showCreateForm && (
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Create New Collection
-              </h3>
-              <form onSubmit={handleCreateCollection}>
-                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={newCollection.name}
-                      onInput={(e) => {
-                        const name = (e.target as HTMLInputElement).value;
-                        setNewCollection({
-                          ...newCollection,
-                          name,
-                          slug: generateSlug(name)
-                        });
-                      }}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="e.g., Blog Posts"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Slug
-                    </label>
-                    <input
-                      type="text"
-                      value={newCollection.slug}
-                      onInput={(e) => setNewCollection({
+          <div className="card-flat">
+            <h3 className="text-xl font-black text-gray-900 mb-6 uppercase tracking-tight">
+              Create New Collection
+            </h3>
+            <form onSubmit={handleCreateCollection}>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="label-flat">Name</label>
+                  <input
+                    type="text"
+                    value={newCollection.name}
+                    onInput={(e) => {
+                      const name = (e.target as HTMLInputElement).value;
+                      setNewCollection({
                         ...newCollection,
-                        slug: (e.target as HTMLInputElement).value
-                      })}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="e.g., blog-posts"
-                      required
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Description
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={newCollection.description}
-                      onInput={(e) => setNewCollection({
-                        ...newCollection,
-                        description: (e.target as HTMLTextAreaElement).value
-                      })}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      placeholder="Optional description of this collection"
-                    />
-                  </div>
+                        name,
+                        slug: generateSlug(name)
+                      });
+                    }}
+                    className="input-flat"
+                    placeholder="e.g., Blog Posts"
+                    required
+                  />
                 </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateForm(false)}
-                    className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    Create Collection
-                  </button>
+                <div>
+                  <label className="label-flat">Slug</label>
+                  <input
+                    type="text"
+                    value={newCollection.slug}
+                    onInput={(e) => setNewCollection({
+                      ...newCollection,
+                      slug: (e.target as HTMLInputElement).value
+                    })}
+                    className="input-flat"
+                    placeholder="e.g., blog-posts"
+                    required
+                  />
                 </div>
-              </form>
-            </div>
+                <div className="sm:col-span-2">
+                  <label className="label-flat">Description</label>
+                  <textarea
+                    rows={3}
+                    value={newCollection.description}
+                    onInput={(e) => setNewCollection({
+                      ...newCollection,
+                      description: (e.target as HTMLTextAreaElement).value
+                    })}
+                    className="input-flat"
+                    placeholder="Optional description of this collection"
+                  />
+                </div>
+              </div>
+              <div className="mt-8 flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Create Collection
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
         {editingCollection && (
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                Edit Collection
-              </h3>
-              <form onSubmit={handleEditCollection}>
-                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Name
-                    </label>
-                    <input
-                      type="text"
-                      value={editingCollection.name}
-                      onInput={(e) => setEditingCollection({
-                        ...editingCollection,
-                        name: (e.target as HTMLInputElement).value
-                      })}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Slug
-                    </label>
-                    <input
-                      type="text"
-                      value={editingCollection.slug}
-                      onInput={(e) => setEditingCollection({
-                        ...editingCollection,
-                        slug: (e.target as HTMLInputElement).value
-                      })}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                      required
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Description
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={editingCollection.description}
-                      onInput={(e) => setEditingCollection({
-                        ...editingCollection,
-                        description: (e.target as HTMLTextAreaElement).value
-                      })}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    />
-                  </div>
+          <div className="card-flat">
+            <h3 className="text-xl font-black text-gray-900 mb-6 uppercase tracking-tight">
+              Edit Collection
+            </h3>
+            <form onSubmit={handleEditCollection}>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="label-flat">Name</label>
+                  <input
+                    type="text"
+                    value={editingCollection.name}
+                    onInput={(e) => setEditingCollection({
+                      ...editingCollection,
+                      name: (e.target as HTMLInputElement).value
+                    })}
+                    className="input-flat"
+                    required
+                  />
                 </div>
-                <div className="mt-6 flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setEditingCollection(null)}
-                    className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
-                  >
-                    Update Collection
-                  </button>
+                <div>
+                  <label className="label-flat">Slug</label>
+                  <input
+                    type="text"
+                    value={editingCollection.slug}
+                    onInput={(e) => setEditingCollection({
+                      ...editingCollection,
+                      slug: (e.target as HTMLInputElement).value
+                    })}
+                    className="input-flat"
+                    required
+                  />
                 </div>
-              </form>
-            </div>
+                <div className="sm:col-span-2">
+                  <label className="label-flat">Description</label>
+                  <textarea
+                    rows={3}
+                    value={editingCollection.description}
+                    onInput={(e) => setEditingCollection({
+                      ...editingCollection,
+                      description: (e.target as HTMLTextAreaElement).value
+                    })}
+                    className="input-flat"
+                  />
+                </div>
+              </div>
+              <div className="mt-8 flex justify-end space-x-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingCollection(null)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary">
+                  Save Changes
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="text-gray-500">Loading collections...</div>
-              </div>
-            ) : collections.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">📁</div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No collections yet</h3>
-                <p className="text-gray-500 mb-6">
-                  Create your first collection to start managing content
-                </p>
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                >
-                  Create Collection
-                </button>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Name
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Slug
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Description
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="relative px-6 py-3">
-                        <span className="sr-only">Actions</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {collections.map((collection) => (
-                      <tr key={collection.id}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <a
-                            href={`/admin/collections/${collection.slug}`}
-                            className="text-sm font-medium text-indigo-600 hover:text-indigo-900"
-                          >
-                            {collection.name}
-                          </a>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500 font-mono">{collection.slug}</div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-500">{collection.description || '—'}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {collection.createdAt}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                          <button
-                            onClick={() => {
-                              setManagingFields(collection);
-                              loadFields(collection.id);
-                            }}
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            Manage Fields
-                          </button>
-                          <button
-                            onClick={() => setEditingCollection(collection)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="text-gray-400 text-xl">Loading collections...</div>
           </div>
-        </div>
+        ) : collections.length === 0 ? (
+          <div className="card-flat text-center py-12">
+            <Icon name="box" className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-black text-gray-900 mb-2 uppercase">No collections yet</h3>
+            <p className="text-gray-600 mb-6 font-medium">
+              Create your first collection to start managing content
+            </p>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="btn-primary"
+            >
+              Create First Collection
+            </button>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {collections.map((collection) => (
+              <div key={collection.id} className="card-flat">
+                <h3 className="text-xl font-black mb-2 uppercase">{collection.name}</h3>
+                <p className="text-sm text-gray-600 mb-4 font-medium">
+                  <span className="font-bold">SLUG:</span> {collection.slug}
+                </p>
+                {collection.description && (
+                  <p className="text-gray-700 mb-4">{collection.description}</p>
+                )}
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleManageFields(collection)}
+                    className="flex-1 px-4 py-2 border-4 border-blue-600 text-blue-600 font-bold hover:bg-blue-600 hover:text-white transition-colors uppercase text-sm"
+                  >
+                    Fields
+                  </button>
+                  <button
+                    onClick={() => setEditingCollection(collection)}
+                    className="flex-1 px-4 py-2 border-4 border-gray-600 text-gray-600 font-bold hover:bg-gray-600 hover:text-white transition-colors uppercase text-sm"
+                  >
+                    Edit
+                  </button>
+                  <a
+                    href={`/admin/collections/${collection.id}`}
+                    className="flex-1 px-4 py-2 border-4 border-green-600 text-green-600 font-bold hover:bg-green-600 hover:text-white transition-colors uppercase text-sm text-center"
+                  >
+                    Items
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
