@@ -19,13 +19,17 @@ chmod +x $STAGEDIR/usr/local/bin/lodge
 # Create manifest with version
 sed "s/%%VERSION%%/$VERSION/g" freebsd-package/pkg-manifest.ucl > pkg-manifest.ucl
 
-# Create the package
-pkg create -M pkg-manifest.ucl -p freebsd-package/pkg-plist -r $STAGEDIR -o .
-
-# Create repository metadata
+# Create repository structure first
+rm -rf repo
 mkdir -p repo/All
-mv lodge-*.pkg repo/All/
-pkg repo repo/
+
+# Create the package directly in the All directory
+pkg create -M pkg-manifest.ucl -p freebsd-package/pkg-plist -r $STAGEDIR -o repo/All/
+
+# Create repository metadata from the parent directory
+cd repo
+pkg repo .
+cd ..
 
 echo "Package created: lodge-$VERSION.pkg"
 echo "Repository metadata created in repo/"
