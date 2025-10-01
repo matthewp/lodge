@@ -1,0 +1,16 @@
+Package: lodge
+Version: 0.1.10
+Architecture: amd64
+Maintainer: Matthew Phillips <matthew@matthewphillips.info>
+Filename: pool/main/l/lodge/lodge_0.1.10_amd64.deb
+Size: 8837666
+MD5sum: a8dca2ae728d6f5f897a2c47c377503c
+SHA1: 4952914b54b6faad3f7d086b3ae711391cafdbf2
+SHA256: a617c5fad04d2325699e5440136469cb54caa169535b195ed02022a82bd3be12
+Section: web
+Priority: optional
+Description: A simple, cozy headless CMS
+ Lodge CMS is a simple headless CMS with emphasis on ease of
+ deployment.
+ Ships as a single binary with embedded web UI and SQLite database.
+
