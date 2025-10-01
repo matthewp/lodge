@@ -206,6 +206,9 @@ jobs:
     needs: [build-linux, build-freebsd]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
