@@ -254,7 +254,7 @@ jobs:
           cp -r debian-repo/* gh-pages/debian/
 
           # Create index.html with installation instructions
-          cat > gh-pages/index.html <<'EOF'
+          cat > gh-pages/index.html <<EOF
           <!DOCTYPE html>
           <html>
           <head>
@@ -282,12 +282,10 @@ sudo apt install lodge</code></pre>
               <h2>FreeBSD Installation</h2>
               <pre><code># Add the repository
 sudo mkdir -p /usr/local/etc/pkg/repos
-sudo sh -c 'cat > /usr/local/etc/pkg/repos/lodge.conf <<EOF
-lodge: {
+echo 'lodge: {
   url: "https://matthewp.github.io/lodge/freebsd/",
   enabled: yes
-}
-EOF'
+}' | sudo tee /usr/local/etc/pkg/repos/lodge.conf
 
 # Update and install
 sudo pkg update
