@@ -1,29 +1,33 @@
 interface NumberFieldProps {
   name: string;
   label: string;
-  value: string;
+  value: number | string;
   placeholder?: string;
   required?: boolean;
-  onChange: (value: string) => void;
+  onChange: (value: number | null) => void;
 }
 
 export function NumberField({ name, label, value, placeholder, required, onChange }: NumberFieldProps) {
+  const handleChange = (e: Event) => {
+    const inputValue = (e.target as HTMLInputElement).value;
+    if (inputValue === '') {
+      onChange(null);
+    } else {
+      const numValue = parseFloat(inputValue);
+      onChange(isNaN(numValue) ? null : numValue);
+    }
+  };
+
   return (
-    <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <input
-        type="number"
-        id={name}
-        name={name}
-        value={value}
-        placeholder={placeholder}
-        required={required}
-        onChange={(e) => onChange((e.target as HTMLInputElement).value)}
-        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      />
-    </div>
+    <input
+      type="number"
+      id={name}
+      name={name}
+      value={value ?? ''}
+      placeholder={placeholder}
+      required={required}
+      onChange={handleChange}
+      className="input-flat"
+    />
   );
 }

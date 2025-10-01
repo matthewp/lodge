@@ -535,7 +535,7 @@ export function Collections() {
                     Edit
                   </button>
                   <a
-                    href={`/admin/collections/${collection.id}`}
+                    href={`/admin/collections/${collection.slug}`}
                     className="flex-1 px-4 py-2 border-4 border-green-600 text-green-600 font-bold hover:bg-green-600 hover:text-white transition-colors uppercase text-sm text-center"
                   >
                     Items

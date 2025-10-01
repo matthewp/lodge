@@ -1,13 +1,14 @@
 interface BooleanFieldProps {
   name: string;
   label: string;
-  value: string;
+  value: boolean | string;
   required?: boolean;
-  onChange: (value: string) => void;
+  onChange: (value: boolean) => void;
 }
 
 export function BooleanField({ name, label, value, required, onChange }: BooleanFieldProps) {
-  const isChecked = value === 'true';
+  // Handle both boolean and string values for backward compatibility
+  const isChecked = typeof value === 'boolean' ? value : value === 'true';
 
   return (
     <div className="flex items-center">
@@ -17,12 +18,12 @@ export function BooleanField({ name, label, value, required, onChange }: Boolean
         name={name}
         checked={isChecked}
         required={required}
-        onChange={(e) => onChange((e.target as HTMLInputElement).checked ? 'true' : 'false')}
-        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+        onChange={(e) => onChange((e.target as HTMLInputElement).checked)}
+        className="h-6 w-6 border-4 border-gray-400 text-black focus:ring-0"
       />
-      <label htmlFor={name} className="ml-2 block text-sm text-gray-900">
+      <label htmlFor={name} className="ml-3 text-sm font-bold text-gray-900 uppercase">
         {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-red-600 ml-1">*</span>}
       </label>
     </div>
   );

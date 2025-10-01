@@ -16,38 +16,53 @@ import { NumberField } from './number';
 import { DateField } from './date';
 import { BooleanField } from './boolean';
 
-interface BaseFieldProps {
+interface Field {
+  id: number;
   name: string;
   label: string;
-  value: string;
-  placeholder?: string;
-  required?: boolean;
-  onChange: (value: string) => void;
-}
-
-interface FieldComponentProps extends BaseFieldProps {
   type: string;
+  required: boolean;
+  placeholder: string;
+  defaultValue: string;
+  sortOrder: number;
 }
 
-export function FieldComponent({ type, ...props }: FieldComponentProps) {
-  switch (type) {
+interface FieldComponentProps {
+  field: Field;
+  value: any;
+  onChange: (value: any) => void;
+}
+
+export function FieldComponent({ field, value, onChange }: FieldComponentProps) {
+  const baseProps = {
+    name: field.name,
+    label: field.label,
+    placeholder: field.placeholder,
+    required: field.required,
+  };
+
+  switch (field.type) {
     case 'text':
-      return <TextField {...props} />;
+      return <TextField {...baseProps} value={value || ''} onChange={onChange} />;
     case 'textarea':
-      return <TextareaField {...props} />;
+      return <TextareaField {...baseProps} value={value || ''} onChange={onChange} />;
     case 'markdown':
-      return <MarkdownField {...props} />;
+      // Handle both string and MarkdownValue types
+      const markdownValue = typeof value === 'object' && value?.md !== undefined
+        ? value
+        : { md: value || '', html: '' };
+      return <MarkdownField {...baseProps} value={markdownValue} onChange={onChange} />;
     case 'email':
-      return <EmailField {...props} />;
+      return <EmailField {...baseProps} value={value || ''} onChange={onChange} />;
     case 'url':
-      return <UrlField {...props} />;
+      return <UrlField {...baseProps} value={value || ''} onChange={onChange} />;
     case 'number':
-      return <NumberField {...props} />;
+      return <NumberField {...baseProps} value={value} onChange={onChange} />;
     case 'date':
-      return <DateField {...props} />;
+      return <DateField {...baseProps} value={value || ''} onChange={onChange} />;
     case 'boolean':
-      return <BooleanField {...props} />;
+      return <BooleanField {...baseProps} value={value} onChange={onChange} />;
     default:
-      return <TextField {...props} />;
+      return <TextField {...baseProps} value={value || ''} onChange={onChange} />;
   }
 }

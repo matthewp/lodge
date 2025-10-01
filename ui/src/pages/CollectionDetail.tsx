@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import { adminAPI } from '../api/admin';
 import { FieldComponent } from '../fields';
 import { Icon } from '../components/Icon';
+import { Dropdown, DropdownItem } from '../components/Dropdown';
 
 interface Collection {
   id: number;
@@ -27,7 +28,7 @@ interface Item {
   id: number;
   collectionId: number;
   slug?: string;
-  data: string; // JSON string from backend
+  data: Record<string, any>; // Object from backend
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -44,11 +45,28 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
-  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importMode, setImportMode] = useState<'create_only' | 'upsert'>('create_only');
+  const [importResults, setImportResults] = useState<any>(null);
+  const importDialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     loadCollection();
   }, [slug]);
+
+  // Handle dialog open/close
+  useEffect(() => {
+    const dialog = importDialogRef.current;
+    if (!dialog) return;
+
+    if (showImportDialog) {
+      dialog.showModal();
+    } else {
+      dialog.close();
+    }
+  }, [showImportDialog]);
 
   const loadCollection = async () => {
     try {
@@ -80,9 +98,33 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
   };
 
   const initializeFormData = () => {
-    const initialData: Record<string, string> = {};
+    const initialData: Record<string, any> = {};
     fields.forEach(field => {
-      initialData[field.name] = field.defaultValue || '';
+      const defaultValue = field.defaultValue || '';
+
+      // Convert default values to proper types based on field type
+      switch (field.type) {
+        case 'number':
+          initialData[field.name] = defaultValue ? parseFloat(defaultValue) : null;
+          break;
+        case 'boolean':
+          initialData[field.name] = defaultValue === 'true';
+          break;
+        case 'markdown':
+          initialData[field.name] = {
+            md: defaultValue,
+            html: ''  // Will be compiled when edited
+          };
+          break;
+        case 'date':
+        case 'text':
+        case 'textarea':
+        case 'email':
+        case 'url':
+        default:
+          initialData[field.name] = defaultValue;
+          break;
+      }
     });
     setFormData(initialData);
   };
@@ -93,13 +135,8 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
   };
 
   const handleEditItem = (item: Item) => {
-    try {
-      const parsedData = JSON.parse(item.data);
-      setFormData(parsedData);
-      setEditingItem(item);
-    } catch (error) {
-      console.error('Failed to parse item data:', error);
-    }
+    setFormData(item.data);
+    setEditingItem(item);
   };
 
   const handleSubmit = async (e: Event) => {
@@ -108,18 +145,21 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
     if (!collection) return;
 
     try {
+      // Extract slug and status from formData, leave only field data
+      const { slug, status, ...fieldData } = formData;
+
       if (editingItem) {
         await adminAPI.updateItem(editingItem.id, {
-          slug: formData.slug,
-          data: formData,
-          status: formData.status || 'draft'
+          slug: slug,
+          data: fieldData,
+          status: status || 'draft'
         });
         setEditingItem(null);
       } else {
         await adminAPI.createItem(collection.id, {
-          slug: formData.slug,
-          data: formData,
-          status: formData.status || 'draft'
+          slug: slug,
+          data: fieldData,
+          status: status || 'draft'
         });
         setShowCreateForm(false);
       }
@@ -149,6 +189,44 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
       }
       return true;
     });
+  };
+
+  const handleExportCSV = async () => {
+    if (!collection) return;
+    try {
+      const blob = await adminAPI.exportCollectionCSV(collection.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${collection.slug}-export.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export CSV:', error);
+      alert('Failed to export CSV. Please try again.');
+    }
+  };
+
+  const handleImportCSV = async () => {
+    if (!collection || !importFile) return;
+    try {
+      const results = await adminAPI.importCollectionCSV(collection.id, importFile, importMode);
+      setImportResults(results);
+      if (results.success > 0) {
+        await loadCollection(); // Reload items to show imported data
+      }
+    } catch (error) {
+      console.error('Failed to import CSV:', error);
+      alert('Failed to import CSV. Please try again.');
+    }
+  };
+
+  const closeImportDialog = () => {
+    setShowImportDialog(false);
+    setImportFile(null);
+    setImportResults(null);
   };
 
   if (loading) {
@@ -187,13 +265,32 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
         </p>
       </div>
 
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <button
           onClick={handleCreateItem}
           className="btn-primary"
         >
           + New Item
         </button>
+
+        <Dropdown
+          trigger="More"
+          align="right"
+          items={[
+            {
+              id: 'export',
+              label: 'Export CSV',
+              icon: 'download',
+              onClick: handleExportCSV
+            },
+            {
+              id: 'import',
+              label: 'Import CSV',
+              icon: 'upload',
+              onClick: () => setShowImportDialog(true)
+            }
+          ]}
+        />
       </div>
 
       <div className="space-y-6">
@@ -229,8 +326,8 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
                     <div className="field-container">
                       <FieldComponent
                         field={field}
-                        value={formData[field.name] || ''}
-                        onChange={(value: string) => setFormData({
+                        value={formData[field.name]}
+                        onChange={(value: any) => setFormData({
                           ...formData,
                           [field.name]: value
                         })}
@@ -299,7 +396,7 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
         ) : (
           <div className="grid gap-6">
             {items.map(item => {
-              const itemData = JSON.parse(item.data);
+              const itemData = item.data;
               const firstField = fields[0];
               const title = firstField ? itemData[firstField.name] : 'Untitled';
 
@@ -364,6 +461,99 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
           </div>
         )}
       </div>
+
+      {/* Import CSV Dialog */}
+      <dialog
+        ref={importDialogRef}
+        className="p-6 rounded-lg max-w-md w-full backdrop:bg-black backdrop:bg-opacity-50"
+        onClose={closeImportDialog}
+      >
+        <h3 className="text-xl font-black text-gray-900 mb-4 uppercase tracking-tight">
+          Import CSV
+        </h3>
+
+        {!importResults ? (
+          <div className="space-y-4">
+            <div>
+              <label className="label-flat">CSV File</label>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={(e) => {
+                  const files = (e.target as HTMLInputElement).files;
+                  setImportFile(files ? files[0] : null);
+                }}
+                className="input-flat"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Upload a CSV file with headers matching your collection fields
+              </p>
+            </div>
+
+            <div>
+              <label className="label-flat">Import Mode</label>
+              <select
+                value={importMode}
+                onChange={(e) => setImportMode(e.target.value as 'create_only' | 'upsert')}
+                className="input-flat"
+              >
+                <option value="create_only">Create Only (skip existing)</option>
+                <option value="upsert">Create or Update</option>
+              </select>
+              <p className="text-xs text-gray-600 mt-1">
+                Choose whether to skip existing items or update them
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-4 mt-6">
+              <button
+                onClick={closeImportDialog}
+                className="btn-secondary"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleImportCSV}
+                disabled={!importFile}
+                className="btn-primary"
+                style={{ opacity: importFile ? 1 : 0.5 }}
+              >
+                Import
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="bg-gray-100 p-4 rounded">
+              <h4 className="font-bold text-green-700">Import Results</h4>
+              <p>✅ Successful: {importResults.success}</p>
+              <p>❌ Errors: {importResults.errors}</p>
+              <p>⏭️ Skipped: {importResults.skipped}</p>
+              <p>📊 Total Rows: {importResults.totalRows}</p>
+            </div>
+
+            {importResults.errorMessages.length > 0 && (
+              <div className="bg-red-50 p-4 rounded max-h-40 overflow-y-auto">
+                <h4 className="font-bold text-red-700 mb-2">Errors:</h4>
+                <ul className="text-sm text-red-600 space-y-1">
+                  {importResults.errorMessages.map((error: string, index: number) => (
+                    <li key={index}>• {error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex justify-end">
+              <button
+                onClick={closeImportDialog}
+                className="btn-primary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </dialog>
     </div>
   );
 }

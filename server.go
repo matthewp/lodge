@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -54,6 +55,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/admin-api/collections/", s.handleAdminCollectionFields)
 	mux.HandleFunc("/admin-api/items/", s.handleAdminItems)
 	mux.HandleFunc("/admin-api/api-keys", s.handleAdminAPIKeys)
+	mux.HandleFunc("/admin-api/export/", s.handleAdminExportCSV)
+	mux.HandleFunc("/admin-api/import/", s.handleAdminImportCSV)
 
 	// Public API routes (for CMS content access)
 	mux.HandleFunc("/api/collections/", s.handleAPICollections)
@@ -548,6 +551,11 @@ func (s *Server) handleAdminItems(w http.ResponseWriter, r *http.Request) {
 				responseItems = append(responseItems, convertItemToResponse(&item))
 			}
 
+			// Ensure we return an empty array instead of null
+			if responseItems == nil {
+				responseItems = []ItemResponse{}
+			}
+
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(responseItems)
 
@@ -873,6 +881,11 @@ func (s *Server) handleAPICollections(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Ensure we return an empty array instead of null
+		if responseItems == nil {
+			responseItems = []ItemResponse{}
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(responseItems)
 
@@ -986,5 +999,365 @@ func startEsbuildWatch() error {
 
 	log.Println("Started esbuild in watch mode")
 	return nil
+}
+
+// CSV Export handler
+func (s *Server) handleAdminExportCSV(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Validate JWT token
+	username, err := s.validateJWTToken(r)
+	if err != nil {
+		s.sendJSONError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := s.db.GetUserByUsername(username)
+	if err != nil || user == nil {
+		s.sendJSONError(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Parse URL: /admin-api/export/{collectionId}
+	path := strings.TrimPrefix(r.URL.Path, "/admin-api/export/")
+	collectionID, err := strconv.Atoi(path)
+	if err != nil {
+		s.sendJSONError(w, "Invalid collection ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get collection and validate it exists
+	collection, err := s.db.GetCollectionByID(collectionID)
+	if err != nil {
+		s.sendJSONError(w, "Failed to get collection", http.StatusInternalServerError)
+		return
+	}
+	if collection == nil {
+		s.sendJSONError(w, "Collection not found", http.StatusNotFound)
+		return
+	}
+
+	// Get collection fields
+	fields, err := s.db.GetCollectionFields(collectionID)
+	if err != nil {
+		s.sendJSONError(w, "Failed to get collection fields", http.StatusInternalServerError)
+		return
+	}
+
+	// Get items for the collection
+	statusFilter := r.URL.Query().Get("status")
+	items, err := s.db.GetItemsByCollection(collectionID)
+	if err != nil {
+		s.sendJSONError(w, "Failed to get items", http.StatusInternalServerError)
+		return
+	}
+
+	// Set CSV headers
+	w.Header().Set("Content-Type", "text/csv")
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s-export.csv\"", collection.Slug))
+
+	// Create CSV writer
+	csvWriter := csv.NewWriter(w)
+	defer csvWriter.Flush()
+
+	// Build header row
+	headers := []string{"_id", "_slug", "_status", "_created_at", "_updated_at"}
+	for _, field := range fields {
+		headers = append(headers, field.Name)
+	}
+
+	if err := csvWriter.Write(headers); err != nil {
+		log.Printf("Error writing CSV headers: %v", err)
+		return
+	}
+
+	// Write data rows
+	for _, item := range items {
+		// Apply status filter if specified
+		if statusFilter != "" && item.Status != statusFilter {
+			continue
+		}
+
+		row := []string{
+			strconv.Itoa(item.ID),
+			item.Slug.String,
+			item.Status,
+			item.CreatedAt.Format(time.RFC3339),
+			item.UpdatedAt.Format(time.RFC3339),
+		}
+
+		// Parse JSON data
+		var data map[string]interface{}
+		if err := json.Unmarshal([]byte(item.Data), &data); err != nil {
+			log.Printf("Error parsing item data for ID %d: %v", item.ID, err)
+			// Add empty values for fields if we can't parse data
+			for range fields {
+				row = append(row, "")
+			}
+		} else {
+			// Add field values in the same order as headers
+			for _, field := range fields {
+				value := ""
+				if fieldValue, exists := data[field.Name]; exists && fieldValue != nil {
+					// Convert value to string based on type
+					switch field.Type {
+					case "boolean":
+						if boolVal, ok := fieldValue.(bool); ok {
+							value = strconv.FormatBool(boolVal)
+						}
+					case "number":
+						switch v := fieldValue.(type) {
+						case float64:
+							value = strconv.FormatFloat(v, 'f', -1, 64)
+						case int:
+							value = strconv.Itoa(v)
+						}
+					case "date":
+						if dateStr, ok := fieldValue.(string); ok {
+							value = dateStr
+						}
+					default:
+						// For text, markdown, email, url, textarea - treat as string
+						if strVal, ok := fieldValue.(string); ok {
+							value = strVal
+						}
+					}
+				}
+				row = append(row, value)
+			}
+		}
+
+		if err := csvWriter.Write(row); err != nil {
+			log.Printf("Error writing CSV row: %v", err)
+			return
+		}
+	}
+}
+
+// CSV Import handler
+func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Validate JWT token
+	username, err := s.validateJWTToken(r)
+	if err != nil {
+		s.sendJSONError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := s.db.GetUserByUsername(username)
+	if err != nil || user == nil {
+		s.sendJSONError(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	// Parse URL: /admin-api/import/{collectionId}
+	path := strings.TrimPrefix(r.URL.Path, "/admin-api/import/")
+	collectionID, err := strconv.Atoi(path)
+	if err != nil {
+		s.sendJSONError(w, "Invalid collection ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get collection and validate it exists
+	collection, err := s.db.GetCollectionByID(collectionID)
+	if err != nil {
+		s.sendJSONError(w, "Failed to get collection", http.StatusInternalServerError)
+		return
+	}
+	if collection == nil {
+		s.sendJSONError(w, "Collection not found", http.StatusNotFound)
+		return
+	}
+
+	// Get collection fields
+	fields, err := s.db.GetCollectionFields(collectionID)
+	if err != nil {
+		s.sendJSONError(w, "Failed to get collection fields", http.StatusInternalServerError)
+		return
+	}
+
+	// Parse multipart form
+	err = r.ParseMultipartForm(10 << 20) // 10 MB max
+	if err != nil {
+		s.sendJSONError(w, "Failed to parse form data", http.StatusBadRequest)
+		return
+	}
+
+	// Get the file from form data
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		s.sendJSONError(w, "Failed to get file from form", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	// Get import mode (create_only or upsert)
+	importMode := r.FormValue("mode")
+	if importMode == "" {
+		importMode = "create_only"
+	}
+
+	// Parse CSV
+	csvReader := csv.NewReader(file)
+	csvReader.FieldsPerRecord = -1 // Allow variable number of fields
+
+	// Read headers
+	headers, err := csvReader.Read()
+	if err != nil {
+		s.sendJSONError(w, "Failed to read CSV headers", http.StatusBadRequest)
+		return
+	}
+
+	// Create field map for quick lookup
+	fieldMap := make(map[string]*CollectionField)
+	for i := range fields {
+		fieldMap[fields[i].Name] = &fields[i]
+	}
+
+	// Process CSV rows
+	var successCount, errorCount, skippedCount int
+	var errors []string
+	rowNumber := 1
+
+	for {
+		rowNumber++
+		record, err := csvReader.Read()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			errors = append(errors, fmt.Sprintf("Row %d: Failed to read - %v", rowNumber, err))
+			errorCount++
+			continue
+		}
+
+		// Create data map for item
+		itemData := make(map[string]interface{})
+		var itemID int
+		var itemSlug, itemStatus string
+
+		// Process each column
+		for i, header := range headers {
+			if i >= len(record) {
+				break
+			}
+			value := record[i]
+
+			// Handle special columns
+			if header == "_id" {
+				if value != "" {
+					itemID, _ = strconv.Atoi(value)
+				}
+			} else if header == "_slug" {
+				itemSlug = value
+			} else if header == "_status" {
+				itemStatus = value
+				if itemStatus == "" {
+					itemStatus = "draft"
+				}
+			} else if strings.HasPrefix(header, "_") {
+				// Skip other meta columns
+				continue
+			} else {
+				// Handle field data
+				if field, exists := fieldMap[header]; exists {
+					// Convert value based on field type
+					var convertedValue interface{}
+
+					if value == "" && !field.Required {
+						// Skip empty non-required fields
+						continue
+					}
+
+					switch field.Type {
+					case "boolean":
+						convertedValue = value == "true" || value == "1" || value == "yes" || value == "on"
+					case "number":
+						if value != "" {
+							if floatVal, err := strconv.ParseFloat(value, 64); err == nil {
+								convertedValue = floatVal
+							} else {
+								errors = append(errors, fmt.Sprintf("Row %d: Invalid number for field '%s'", rowNumber, header))
+								continue
+							}
+						}
+					case "date":
+						// Keep as string, frontend handles date parsing
+						convertedValue = value
+					default:
+						// text, textarea, markdown, email, url - all strings
+						convertedValue = value
+					}
+
+					// Validate required fields
+					if field.Required && value == "" {
+						errors = append(errors, fmt.Sprintf("Row %d: Required field '%s' is empty", rowNumber, header))
+						errorCount++
+						continue
+					}
+
+					itemData[header] = convertedValue
+				}
+			}
+		}
+
+		// Check if we should skip or update existing items
+		if importMode == "create_only" && itemID > 0 {
+			// Check if item exists
+			existingItem, _ := s.db.GetItem(itemID)
+			if existingItem != nil {
+				skippedCount++
+				continue
+			}
+		}
+
+		// Convert data to JSON
+		dataJSON, err := json.Marshal(itemData)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("Row %d: Failed to encode data", rowNumber))
+			errorCount++
+			continue
+		}
+
+		// Create or update item
+		if importMode == "upsert" && itemID > 0 {
+			// Update existing item
+			err = s.db.UpdateItem(itemID, itemSlug, string(dataJSON), itemStatus)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("Row %d: Failed to update item - %v", rowNumber, err))
+				errorCount++
+			} else {
+				successCount++
+			}
+		} else {
+			// Create new item
+			_, err = s.db.CreateItem(collectionID, itemSlug, string(dataJSON), itemStatus, user.ID)
+			if err != nil {
+				errors = append(errors, fmt.Sprintf("Row %d: Failed to create item - %v", rowNumber, err))
+				errorCount++
+			} else {
+				successCount++
+			}
+		}
+	}
+
+	// Return import results
+	response := map[string]interface{}{
+		"success":       successCount,
+		"errors":        errorCount,
+		"skipped":       skippedCount,
+		"totalRows":     rowNumber - 1,
+		"errorMessages": errors,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 

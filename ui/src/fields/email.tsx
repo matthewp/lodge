@@ -9,21 +9,15 @@ interface EmailFieldProps {
 
 export function EmailField({ name, label, value, placeholder, required, onChange }: EmailFieldProps) {
   return (
-    <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <input
-        type="email"
-        id={name}
-        name={name}
-        value={value}
-        placeholder={placeholder || "example@email.com"}
-        required={required}
-        onChange={(e) => onChange((e.target as HTMLInputElement).value)}
-        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      />
-    </div>
+    <input
+      type="email"
+      id={name}
+      name={name}
+      value={value}
+      placeholder={placeholder || "example@email.com"}
+      required={required}
+      onChange={(e) => onChange((e.target as HTMLInputElement).value)}
+      className="input-flat"
+    />
   );
 }

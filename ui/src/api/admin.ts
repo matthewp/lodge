@@ -270,6 +270,49 @@ class AdminAPI {
   isAuthenticated(): boolean {
     return !!localStorage.getItem('lodge_token');
   }
+
+  async exportCollectionCSV(collectionId: number, statusFilter?: string): Promise<Blob> {
+    const url = new URL(`${window.location.origin}${this.baseURL}/export/${collectionId}`);
+    if (statusFilter) {
+      url.searchParams.append('status', statusFilter);
+    }
+
+    const response = await fetch(url, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to export CSV');
+    }
+
+    return await response.blob();
+  }
+
+  async importCollectionCSV(collectionId: number, file: File, mode: 'create_only' | 'upsert' = 'create_only'): Promise<{
+    success: number;
+    errors: number;
+    skipped: number;
+    totalRows: number;
+    errorMessages: string[];
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('mode', mode);
+
+    const response = await fetch(`${this.baseURL}/import/${collectionId}`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to import CSV');
+    }
+
+    return await response.json();
+  }
 }
 
 export const adminAPI = new AdminAPI();

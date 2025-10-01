@@ -7,6 +7,7 @@ A simple, cozy headless CMS with emphasis on ease of deployment. Lodge CMS ships
 - **Single Binary Deployment** - Everything including the web UI ships as one executable
 - **SQLite Database** - Embedded database, no external dependencies
 - **Headless Architecture** - RESTful API for content access
+- **CSV Import/Export** - Bulk content management with support for migration from other CMSes
 - **Simple Tooling** - Built with esbuild, no complex build systems
 - **Cross-Platform** - Supports Linux and FreeBSD
 - **API Key Authentication** - Secure API access with key management
@@ -37,7 +38,6 @@ sudo apt install lodge
 sudo mkdir -p /usr/local/etc/pkg/repos
 echo 'lodge: {
   url: "https://matthewp.github.io/lodge",
-  mirror_type: "http",
   enabled: yes
 }' | sudo tee /usr/local/etc/pkg/repos/lodge.conf
 sudo pkg update
@@ -250,6 +250,129 @@ Common HTTP status codes:
 - `401` - Unauthorized (missing/invalid API key)
 - `404` - Collection or item not found
 - `500` - Server error
+
+## CSV Import/Export
+
+Lodge CMS provides powerful CSV import and export functionality for bulk content management. This feature is perfect for migrating content from other CMSes, data analysis, or managing large amounts of content efficiently.
+
+### Accessing CSV Features
+
+In the admin interface:
+1. Navigate to any collection's detail page
+2. Click the **"More"** dropdown button (top right)
+3. Select **"Export CSV"** or **"Import CSV"**
+
+### Export Format
+
+CSV exports include both content data and metadata in a standardized format:
+
+#### Column Structure
+- **Metadata columns** (prefixed with `_`):
+  - `_id` - Unique item identifier
+  - `_slug` - URL slug (optional)
+  - `_status` - Publication status (`draft`, `published`, `archived`)
+  - `_created_at` - Creation timestamp (ISO 8601 format)
+  - `_updated_at` - Last modification timestamp (ISO 8601 format)
+
+- **Content columns**: Each field in your collection appears as a column with the field's name
+
+#### Example Export
+```csv
+_id,_slug,_status,_created_at,_updated_at,title,content,author,published_date,featured
+1,first-post,published,2024-01-15T10:30:00Z,2024-01-15T10:30:00Z,"My First Post","This is the content of my first post...","John Doe",2024-01-15,true
+2,draft-post,draft,2024-01-16T14:20:00Z,2024-01-16T14:20:00Z,"Draft Post","Work in progress content...","Jane Smith",,false
+```
+
+#### Field Type Handling in Export
+- **Text/Textarea/Email/URL/Markdown**: Exported as strings (properly escaped)
+- **Number**: Exported as numeric values
+- **Boolean**: Exported as `true`/`false`
+- **Date**: Exported in ISO 8601 format (YYYY-MM-DD)
+- **Empty fields**: Exported as empty strings
+
+### Import Format Requirements
+
+#### CSV Structure
+Your CSV file must follow these requirements:
+
+1. **First row must contain headers** matching your collection's field names
+2. **Metadata columns are optional** but recommended:
+   - Include `_id` for updating existing items (upsert mode)
+   - Include `_slug` to set custom URL slugs
+   - Include `_status` to control publication status
+3. **Field columns** must match the exact field names in your collection
+4. **Required fields** must have values (cannot be empty)
+
+#### Import Modes
+- **Create Only** (default): Skips rows where `_id` matches existing items
+- **Create or Update**: Updates existing items if `_id` is provided, creates new ones otherwise
+
+#### Field Type Conversion
+Lodge automatically converts CSV values to appropriate types:
+
+- **Text/Textarea/Email/URL/Markdown**: Used as-is (strings)
+- **Number**: Parsed from string to numeric value
+- **Boolean**: Accepts `true`, `1`, `yes`, `on` as true; everything else as false
+- **Date**: Accepts various formats (ISO 8601, MM/DD/YYYY, etc.)
+
+#### Example Import CSV
+```csv
+_slug,_status,title,content,author,published_date,featured
+my-imported-post,published,"Imported Post","This content was imported from CSV","Import User",2024-01-20,true
+another-post,draft,"Another Post","Draft content from import","Import User",,false
+```
+
+### Import Process
+
+1. **File Upload**: Select your CSV file (must have `.csv` extension)
+2. **Mode Selection**: Choose between "Create Only" or "Create or Update"
+3. **Validation**: Lodge validates each row and reports any errors
+4. **Results**: View detailed import statistics including:
+   - ✅ Successful imports
+   - ❌ Errors with specific error messages
+   - ⏭️ Skipped items (in create-only mode)
+   - 📊 Total rows processed
+
+### Error Handling
+
+Common import errors and solutions:
+
+- **"Required field 'X' is empty"**: Ensure all required fields have values
+- **"Invalid number for field 'X'"**: Check numeric fields contain valid numbers
+- **"Failed to create item"**: Check for duplicate slugs or other validation errors
+- **"Row X: Failed to read"**: Check CSV formatting, ensure proper escaping of quotes
+
+### Migration Tips
+
+#### From WordPress
+1. Export your WordPress content as XML or use a plugin to generate CSV
+2. Map WordPress fields to Lodge collection fields:
+   - `post_title` → `title`
+   - `post_content` → `content`
+   - `post_date` → `published_date`
+   - `post_status` → `_status` (map `publish` to `published`)
+
+#### From Other CMSes
+1. Export content in CSV format from your source CMS
+2. Create a collection in Lodge with matching field types
+3. Rename CSV columns to match Lodge field names
+4. Convert data formats if needed (especially dates and booleans)
+5. Import using "Create Only" mode for initial migration
+
+#### Large Datasets
+- **File size limit**: 10MB per CSV file
+- **Processing**: Large files are processed row-by-row with detailed error reporting
+- **Performance**: Consider splitting very large datasets into multiple files
+- **Memory**: Lodge handles large imports efficiently with streaming processing
+
+### Best Practices
+
+1. **Test with small files first** to validate your format
+2. **Use meaningful slugs** for better URL structure
+3. **Set appropriate status values** (`draft` for review, `published` for live content)
+4. **Backup your data** before large imports
+5. **Validate required fields** in your source data before import
+6. **Use consistent date formats** (ISO 8601 recommended: YYYY-MM-DD)
 
 ### API Key Management
 
