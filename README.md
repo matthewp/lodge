@@ -26,6 +26,9 @@ A simple, cozy headless CMS with emphasis on ease of deployment. Lodge CMS ships
 
 **Ubuntu/Debian:**
 ```bash
+# Import the GPG key
+curl -fsSL https://matthewp.github.io/lodge/debian/gpg-key.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/lodge.gpg
+
 # Add the APT repository
 echo "deb https://matthewp.github.io/lodge/debian/ stable main" | sudo tee /etc/apt/sources.list.d/lodge.list
 sudo apt update

@@ -136,6 +136,9 @@ jobs:
             done
           )
 
+          # Sign the Release file - this step will be moved to the release job
+          # (Signing needs to happen after GPG key is imported)
+
           cd ..
 
       - name: Upload Linux artifact
@@ -209,6 +212,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
@@ -258,6 +267,15 @@ jobs:
 
           # Copy Debian repository
           cp -r debian-repo/* gh-pages/debian/
+
+          # Sign the Debian repository Release file
+          cd gh-pages/debian
+          gpg --detach-sign --armor --output dists/stable/Release.gpg dists/stable/Release
+          gpg --clear-sign --armor --output dists/stable/InRelease dists/stable/Release
+          cd ../..
+
+          # Export public key for users
+          gpg --armor --export > gh-pages/debian/gpg-key.asc
 
           # Generate index.html with installation instructions
           ./scripts/generate-index.sh gh-pages
