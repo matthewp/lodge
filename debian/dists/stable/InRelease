@@ -1,0 +1,34 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: Lodge CMS
+Label: Lodge CMS
+Suite: stable
+Version: 0.1.11
+Codename: stable
+Date: Wed, 01 Oct 2025 01:53:15 +0000
+Architectures: amd64
+Components: main
+Description: Lodge CMS Debian Repository
+MD5Sum:
+ d79b32677cf5dc101c783152f84d724d 553 main/binary-amd64/Packages
+ 1a8dd8583dd06f885af6245f6537744b 408 main/binary-amd64/Packages.gz
+SHA256:
+ 54add9b94ba2b921c72fe0436717ce58c8cf3b63423b8a447ad1506e65315e8b 553 main/binary-amd64/Packages
+ 2fbe2942c4be8ff3559ec7ff8c8834539eda884466001830128bd0fad2fc1276 408 main/binary-amd64/Packages.gz
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCgAdFiEEyfRwcJbPn2bkNd1jI5Wq4j2SS/EFAmjcijoACgkQI5Wq4j2S
+S/ESwQ/+OBWVCgg6R1vwQ6tPmwa8JVqOtLlgbpqx7zhsl0w6AXuzf44qhnny87NZ
+TgB2Kba7Nt+M5z51190ywgbjJ8b9srpc68TEoMzGyKK3lQ63dzMr6O6F3M5ThQvx
+aZTjdjXVBaMC2UWCyix53xMLXjqCBMIMBml92QYelNSzp7A3atKQtiy72mF7EhIJ
+BcSQJ5nbN/BRblnG5e/cZClpfzXOdI+Z+66IQwtofW/oc5XRvlOobRV6bMh4lh+K
+MUwU2VhbdLzx7PIM3ZLHWEet7GVATrdG7nhkRiVDlO0FQgkj/xmF3V61FgJJYbPs
+W8uGkQ0FPKOAcZ5gqurBSBbMKJmIjTW7q3qygBITJ7AYHh31V69h3G0U72DgwpsD
+1a5kduJXVC1FQRNrETp6I+U4kcZmLSvI2dqzc6TU2Pv8R2oe8XJtaNsly22AmnWF
+HpRqc4egbYnPVaeVNmcU0f14tU/l6qe7Qc1e58FdNWnnbjIFCp1vnyvVmTeWEPp6
+hOOoJYfKjwK1G66kk5XgNlj03Zm/75wk97WokUt8vyTNtOcruYNvmrDPtOwLn+Lt
+bYkvIsHlMLpd5frJ5hGy18Wxe2Hl2UugWWloYHv/QUan7YQTF6rqHnumW6tRjfpY
+fimQFlkWPDYu1TfT+LLM7dsIbugJY5ux5ouZFEGHfas6xRKaWV8=
+=iWlJ
+-----END PGP SIGNATURE-----

@@ -15,7 +15,10 @@
     <p>Official package repository for Lodge CMS, a simple headless CMS.</p>
 
     <h2>Debian/Ubuntu Installation</h2>
-    <pre><code># Add the repository
+    <pre><code># Import the GPG key
+curl -fsSL https://matthewp.github.io/lodge/debian/gpg-key.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/lodge.gpg
+
+# Add the repository
 echo "deb https://matthewp.github.io/lodge/debian/ stable main" | sudo tee /etc/apt/sources.list.d/lodge.list
 
 # Update and install

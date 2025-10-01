@@ -1,15 +1,15 @@
 Origin: Lodge CMS
 Label: Lodge CMS
 Suite: stable
-Version: 0.1.10
+Version: 0.1.11
 Codename: stable
-Date: Wed, 01 Oct 2025 01:23:39 +0000
+Date: Wed, 01 Oct 2025 01:53:15 +0000
 Architectures: amd64
 Components: main
 Description: Lodge CMS Debian Repository
 MD5Sum:
- 2feb9b66200f64a6f4309730d1a9f58c 553 main/binary-amd64/Packages
- ebe24a20c25f12bbb0b975c3eabf4f00 408 main/binary-amd64/Packages.gz
+ d79b32677cf5dc101c783152f84d724d 553 main/binary-amd64/Packages
+ 1a8dd8583dd06f885af6245f6537744b 408 main/binary-amd64/Packages.gz
 SHA256:
- cf21b824cd936b6895835e1e7bd21dabe747c80deba6c0cead53b2370961a72f 553 main/binary-amd64/Packages
- fd1b99638a61a50422a89c2e1ffe8a9a04a08db626a31b95e5f4f95217fcece7 408 main/binary-amd64/Packages.gz
+ 54add9b94ba2b921c72fe0436717ce58c8cf3b63423b8a447ad1506e65315e8b 553 main/binary-amd64/Packages
+ 2fbe2942c4be8ff3559ec7ff8c8834539eda884466001830128bd0fad2fc1276 408 main/binary-amd64/Packages.gz
