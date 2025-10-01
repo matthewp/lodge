@@ -72,6 +72,69 @@ jobs:
           dpkg-deb --build lodge-deb
           mv lodge-deb.deb lodge_${VERSION}_amd64.deb
 
+      - name: Build Debian repository structure
+        run: |
+          # Get version from tag
+          VERSION=${GITHUB_REF_NAME#v}
+          export VERSION
+
+          # Create repository structure
+          mkdir -p debian-repo/pool/main/l/lodge
+          mkdir -p debian-repo/dists/stable/main/binary-amd64
+
+          # Copy the .deb file to pool
+          cp lodge_${VERSION}_amd64.deb debian-repo/pool/main/l/lodge/
+
+          # Generate Packages file
+          cd debian-repo
+          dpkg-scanpackages pool/ > dists/stable/main/binary-amd64/Packages
+          gzip -c dists/stable/main/binary-amd64/Packages > dists/stable/main/binary-amd64/Packages.gz
+
+          # Create Release file for component
+          cat > dists/stable/main/binary-amd64/Release <<EOF
+          Archive: stable
+          Version: ${VERSION}
+          Component: main
+          Origin: Lodge CMS
+          Label: Lodge CMS
+          Architecture: amd64
+          EOF
+
+          # Create main Release file
+          cat > dists/stable/Release <<EOF
+          Origin: Lodge CMS
+          Label: Lodge CMS
+          Suite: stable
+          Version: ${VERSION}
+          Codename: stable
+          Date: $(date -R)
+          Architectures: amd64
+          Components: main
+          Description: Lodge CMS Debian Repository
+          EOF
+
+          # Add MD5 checksums to Release file
+          echo "MD5Sum:" >> dists/stable/Release
+          (cd dists/stable && \
+            for file in main/binary-amd64/Packages*; do
+              size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file")
+              md5=$(md5sum "$file" | awk '{print $1}')
+              echo " ${md5} ${size} ${file}" >> Release
+            done
+          )
+
+          # Add SHA256 checksums to Release file
+          echo "SHA256:" >> dists/stable/Release
+          (cd dists/stable && \
+            for file in main/binary-amd64/Packages*; do
+              size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file")
+              sha256=$(sha256sum "$file" | awk '{print $1}')
+              echo " ${sha256} ${size} ${file}" >> Release
+            done
+          )
+
+          cd ..
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
@@ -83,6 +146,12 @@ jobs:
         with:
           name: lodge-deb
           path: lodge_*_amd64.deb
+
+      - name: Upload Debian repository artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-repo
+          path: debian-repo/
 
   build-freebsd:
     runs-on: ubuntu-latest
@@ -149,6 +218,12 @@ jobs:
         with:
           name: lodge-deb
 
+      - name: Download Debian repository artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: debian-repo
+          path: debian-repo
+
       - name: Download FreeBSD package artifact
         uses: actions/download-artifact@v4
         with:
@@ -166,20 +241,66 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: Publish to GitHub Packages APT
+      - name: Combine package repositories
         run: |
-          # Get version from tag
-          VERSION=${GITHUB_REF_NAME#v}
+          # Create combined repository structure
+          mkdir -p gh-pages/freebsd
+          mkdir -p gh-pages/debian
 
-          # Upload to GitHub Packages APT repository
-          curl -X PUT \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/vnd.debian.binary-package" \
-            --data-binary "@lodge_${VERSION}_amd64.deb" \
-            "https://uploads.github.com/repos/${{ github.repository }}/packages/debian/pool/main/l/lodge/lodge_${VERSION}_amd64.deb"
+          # Copy FreeBSD repository
+          cp -r repo/* gh-pages/freebsd/
 
-      - name: Publish FreeBSD packages to GitHub Pages
+          # Copy Debian repository
+          cp -r debian-repo/* gh-pages/debian/
+
+          # Create index.html with installation instructions
+          cat > gh-pages/index.html <<'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Lodge CMS Package Repository</title>
+              <style>
+                  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+                  h1 { color: #333; }
+                  h2 { color: #555; margin-top: 30px; }
+                  pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; }
+                  code { background: #f5f5f5; padding: 2px 5px; border-radius: 3px; }
+              </style>
+          </head>
+          <body>
+              <h1>Lodge CMS Package Repository</h1>
+              <p>Official package repository for Lodge CMS, a simple headless CMS.</p>
+
+              <h2>Debian/Ubuntu Installation</h2>
+              <pre><code># Add the repository
+echo 'deb https://matthewp.github.io/lodge/debian/ stable main' | sudo tee /etc/apt/sources.list.d/lodge.list
+
+# Update and install
+sudo apt update
+sudo apt install lodge</code></pre>
+
+              <h2>FreeBSD Installation</h2>
+              <pre><code># Add the repository
+sudo mkdir -p /usr/local/etc/pkg/repos
+sudo sh -c 'cat > /usr/local/etc/pkg/repos/lodge.conf <<EOF
+lodge: {
+  url: "https://matthewp.github.io/lodge/freebsd/",
+  enabled: yes
+}
+EOF'
+
+# Update and install
+sudo pkg update
+sudo pkg install lodge</code></pre>
+
+              <h2>Manual Downloads</h2>
+              <p>You can also download packages directly from the <a href="https://github.com/matthewp/lodge/releases">GitHub Releases</a> page.</p>
+          </body>
+          </html>
+          EOF
+
+      - name: Publish packages to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./repo
+          publish_dir: ./gh-pages

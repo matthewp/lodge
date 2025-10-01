@@ -27,7 +27,7 @@ A simple, cozy headless CMS with emphasis on ease of deployment. Lodge CMS ships
 **Ubuntu/Debian:**
 ```bash
 # Add the APT repository
-echo "deb https://github.com/matthewp/lodge/packages/debian stable main" | sudo tee /etc/apt/sources.list.d/lodge.list
+echo "deb https://matthewp.github.io/lodge/debian/ stable main" | sudo tee /etc/apt/sources.list.d/lodge.list
 sudo apt update
 sudo apt install lodge
 ```
@@ -37,7 +37,7 @@ sudo apt install lodge
 # Add the package repository
 sudo mkdir -p /usr/local/etc/pkg/repos
 echo 'lodge: {
-  url: "https://matthewp.github.io/lodge",
+  url: "https://matthewp.github.io/lodge/freebsd/",
   enabled: yes
 }' | sudo tee /usr/local/etc/pkg/repos/lodge.conf
 sudo pkg update
