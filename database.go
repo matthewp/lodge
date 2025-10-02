@@ -193,6 +193,51 @@ func (d *Database) GetUserByUsername(username string) (*User, error) {
 	return &user, nil
 }
 
+func (d *Database) GetUsers() ([]User, error) {
+	query := `SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC`
+	rows, err := d.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		var createdAt time.Time
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Role, &createdAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan user: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if users == nil {
+		users = []User{}
+	}
+
+	return users, nil
+}
+
+func (d *Database) DeleteUser(id int) error {
+	query := `DELETE FROM users WHERE id = ?`
+	result, err := d.db.Exec(query, id)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("user not found")
+	}
+
+	return nil
+}
+
 // API Key Management
 func (d *Database) CreateAPIKey(name string, createdBy int) (string, error) {
 	// Generate a random API key

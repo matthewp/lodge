@@ -72,6 +72,47 @@ class AdminAPI {
     }
   }
 
+  // User Management
+  async getUsers(): Promise<Array<{ id: number; username: string; email: string; role: string }>> {
+    const response = await fetch(`${this.baseURL}/users`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch users');
+    }
+
+    return await response.json();
+  }
+
+  async createUser(user: { username: string; email: string; password: string, role: string }): Promise<void> {
+    const response = await fetch(`${this.baseURL}/users`, {
+      method: 'POST',
+      headers: {
+        ...this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(user),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create user');
+    }
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    const response = await fetch(`${this.baseURL}/users/${id}`, {
+      method: 'DELETE',
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete user');
+    }
+  }
+
   // Collections Management
   async getCollections(): Promise<Array<{ id: number; name: string; slug: string; description: string; createdAt: string; updatedAt: string }>> {
     const response = await fetch(`${this.baseURL}/collections`, {
