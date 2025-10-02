@@ -51,6 +51,7 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/admin-api/login", s.handleAdminLogin)
 	mux.HandleFunc("/admin-api/logout", s.handleAdminLogout)
 	mux.HandleFunc("/admin-api/me", s.handleAdminMe)
+	mux.HandleFunc("/admin-api/stats", s.handleAdminStats)
 	mux.HandleFunc("/admin-api/collections", s.handleAdminCollections)
 	mux.HandleFunc("/admin-api/collections/", s.handleAdminCollectionFields)
 	mux.HandleFunc("/admin-api/items/", s.handleAdminItems)
@@ -1223,7 +1224,7 @@ func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
 
 	// Process CSV rows
 	var successCount, errorCount, skippedCount int
-	var errors []string
+	errors := []string{} // Initialize as empty slice instead of nil
 	rowNumber := 1
 
 	for {
@@ -1359,5 +1360,32 @@ func (s *Server) handleAdminImportCSV(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+// handleAdminStats returns statistics for the dashboard
+func (s *Server) handleAdminStats(w http.ResponseWriter, r *http.Request) {
+	// Only allow GET
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Validate JWT token
+	_, err := s.validateJWTToken(r)
+	if err != nil {
+		s.sendJSONError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Get stats from database
+	stats, err := s.db.GetStats()
+	if err != nil {
+		log.Printf("Failed to get stats: %v", err)
+		http.Error(w, "Failed to get stats", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
 }
 

@@ -137,6 +137,24 @@ export function Dashboard() {
 }
 
 function DashboardHome() {
+  const [stats, setStats] = useState({ collections: 0, items: 0, users: 0, apiKeys: 0 });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await adminAPI.getStats();
+        setStats(data);
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    }
+
+    loadStats();
+  }, []);
+
   return (
     <div>
       <div className="mb-8 border-b-4 border-gray-300 pb-6">
@@ -163,7 +181,7 @@ function DashboardHome() {
                     Collections
                   </dt>
                   <dd className="text-3xl font-black text-gray-900">
-                    0
+                    {loadingStats ? '...' : stats.collections}
                   </dd>
                 </dl>
               </div>
@@ -183,7 +201,7 @@ function DashboardHome() {
                     Items
                   </dt>
                   <dd className="text-3xl font-black text-gray-900">
-                    0
+                    {loadingStats ? '...' : stats.items}
                   </dd>
                 </dl>
               </div>
@@ -203,7 +221,7 @@ function DashboardHome() {
                     Users
                   </dt>
                   <dd className="text-3xl font-black text-gray-900">
-                    1
+                    {loadingStats ? '...' : stats.users}
                   </dd>
                 </dl>
               </div>

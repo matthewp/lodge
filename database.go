@@ -838,3 +838,45 @@ func (d *Database) DeleteItem(id int) error {
 
 	return nil
 }
+// GetStats returns counts for dashboard statistics
+func (d *Database) GetStats() (map[string]int, error) {
+	stats := map[string]int{}
+
+	// Get collection count
+	var collectionCount int
+	err := d.db.QueryRow("SELECT COUNT(*) FROM collections").Scan(&collectionCount)
+	if err != nil {
+		log.Printf("Failed to get collection count: %v", err)
+		collectionCount = 0
+	}
+	stats["collections"] = collectionCount
+
+	// Get item count
+	var itemCount int
+	err = d.db.QueryRow("SELECT COUNT(*) FROM items").Scan(&itemCount)
+	if err != nil {
+		log.Printf("Failed to get item count: %v", err)
+		itemCount = 0
+	}
+	stats["items"] = itemCount
+
+	// Get user count
+	var userCount int
+	err = d.db.QueryRow("SELECT COUNT(*) FROM users").Scan(&userCount)
+	if err != nil {
+		log.Printf("Failed to get user count: %v", err)
+		userCount = 0
+	}
+	stats["users"] = userCount
+
+	// Get API key count
+	var apiKeyCount int
+	err = d.db.QueryRow("SELECT COUNT(*) FROM api_keys").Scan(&apiKeyCount)
+	if err != nil {
+		log.Printf("Failed to get API key count: %v", err)
+		apiKeyCount = 0
+	}
+	stats["apiKeys"] = apiKeyCount
+
+	return stats, nil
+}

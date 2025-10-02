@@ -55,6 +55,23 @@ class AdminAPI {
     }
   }
 
+  async getStats(): Promise<{ collections: number; items: number; users: number; apiKeys: number }> {
+    try {
+      const response = await fetch(`${this.baseURL}/stats`, {
+        headers: this.getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch stats');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+      return { collections: 0, items: 0, users: 0, apiKeys: 0 };
+    }
+  }
+
   // Collections Management
   async getCollections(): Promise<Array<{ id: number; name: string; slug: string; description: string; createdAt: string; updatedAt: string }>> {
     const response = await fetch(`${this.baseURL}/collections`, {
