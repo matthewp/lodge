@@ -1,12 +1,12 @@
 Package: lodge
-Version: 0.1.11
+Version: 0.1.12
 Architecture: amd64
 Maintainer: Matthew Phillips <matthew@matthewphillips.info>
-Filename: pool/main/l/lodge/lodge_0.1.11_amd64.deb
-Size: 8837616
-MD5sum: 446ef05845b97d0eb6b1dfec024d28e5
-SHA1: 325b9312e2a75dd14fd934d4b7f3fca28652fed9
-SHA256: 11dff79bd6d0844234ad2cbc87483a7558a2b422edc3a59ebb270c6ab6881bbf
+Filename: pool/main/l/lodge/lodge_0.1.12_amd64.deb
+Size: 8837920
+MD5sum: 68753468e989128a4d6a425075f1f6c8
+SHA1: bdec16f97ba66b14e55cc55396cb2778b5e0419d
+SHA256: abe8647be5c45822780c43596f85a6ef4798d47f054fd34b768f862b3e544f6d
 Section: web
 Priority: optional
 Description: A simple, cozy headless CMS
