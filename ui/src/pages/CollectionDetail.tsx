@@ -50,6 +50,7 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importMode, setImportMode] = useState<'create_only' | 'upsert'>('create_only');
   const [importResults, setImportResults] = useState<any>(null);
+  const [importing, setImporting] = useState(false);
   const importDialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -211,6 +212,7 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
 
   const handleImportCSV = async () => {
     if (!collection || !importFile) return;
+    setImporting(true);
     try {
       const results = await adminAPI.importCollectionCSV(collection.id, importFile, importMode);
       setImportResults(results);
@@ -220,6 +222,8 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
     } catch (error) {
       console.error('Failed to import CSV:', error);
       alert('Failed to import CSV. Please try again.');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -227,6 +231,7 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
     setShowImportDialog(false);
     setImportFile(null);
     setImportResults(null);
+    setImporting(false);
   };
 
   if (loading) {
@@ -514,11 +519,11 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
               </button>
               <button
                 onClick={handleImportCSV}
-                disabled={!importFile}
+                disabled={!importFile || importing}
                 className="btn-primary"
-                style={{ opacity: importFile ? 1 : 0.5 }}
+                style={{ opacity: (importFile && !importing) ? 1 : 0.5 }}
               >
-                Import
+                {importing ? 'Importing...' : 'Import'}
               </button>
             </div>
           </div>
