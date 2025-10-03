@@ -4,31 +4,31 @@ Hash: SHA512
 Origin: Lodge CMS
 Label: Lodge CMS
 Suite: stable
-Version: 0.1.12
+Version: 0.1.13
 Codename: stable
-Date: Thu, 02 Oct 2025 12:29:45 +0000
+Date: Fri, 03 Oct 2025 11:36:02 +0000
 Architectures: amd64
 Components: main
 Description: Lodge CMS Debian Repository
 MD5Sum:
- 92941ebb032bcbc2880bfcd875614ef2 553 main/binary-amd64/Packages
- a598c5a34d534355df2ee39fb182a74a 410 main/binary-amd64/Packages.gz
+ ef497d33a9be49828ed54f48842bbb2d 553 main/binary-amd64/Packages
+ ee838af7dbff96625be1fb7ea5cb005e 409 main/binary-amd64/Packages.gz
 SHA256:
- 4cbd9e728ef8ee31f159cee97453a27bb40712cd59d9dc96137789219b421876 553 main/binary-amd64/Packages
- f6ff1f6243e1f988ca5f61ef7bdfc3136d0deb1273e500db732e0a921f7c20eb 410 main/binary-amd64/Packages.gz
+ d08bb446581affd51349fcbd23e7c5de8ac33c3f5529c968f72539999ec8eea4 553 main/binary-amd64/Packages
+ d906dad74c57e2a92d83540b0fed9531219e0f6056963ef8eafcfe91d0cb8d3a 409 main/binary-amd64/Packages.gz
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEyfRwcJbPn2bkNd1jI5Wq4j2SS/EFAmjecmEACgkQI5Wq4j2S
-S/Hr6Q/8DRcJAFewG6xc6mMUa0t8BsR0n0kktqJC8sGfv+E4jxA33D0T54TXGAMk
-CtVSKawIk0jNoManNljf5Ro9limL197kAazQeVDfh5XyqGaGOxS3MwNXKKbLpwfc
-uydlH9fBWiu9ehpzjKec8VkS34hFci9inVC4w44RFvuwa1IHx70VXyR/BpRDmcB1
-hPFtueZg1hc23RpgoU2+hTWRvbDjjBZavWu0lDjFPQ6ONdS1nz5TWmMu6LWWbhqa
-vTCNtoinwt5k40ymvs5TnKhmAQvCnnwg6UbVqNGwE0OGerqD/zsGcZ0whiOfrODj
-XOZDkpgRVbtjXh2kol5kWflUVCcHhmxxbudb5FbsXj+FD8ohmOxxWw8Fy08m0acO
-e3dki2JCvbEADFGLv1HLoIPX7cFPZIxBB3wVsafeu2StkF9jl+D39B3MxvooRgG0
-+OLjkOVQmS3+s/rd3CMVatrG86jEgQja24eLP26pGlISKd/muQXleCBAtlvwKbxi
-eKRtFd+qItlElkhU8OF9tum6jZ7GKXZm4KrEEwcS4FiYIY1deXmlZ+gq5E1El2Pi
-i2t1Ot/G8YGRkarg/xK7M1j/rFfANlmAEtwRwSxt4Q9uyv6hAWQL5v5a/CmB8cXA
-Yh7sS+soY/nKXhvT+j3wToYMf9tuySzdjMOSMravuWWlatP/j3Y=
-=T+ek
+iQIzBAEBCgAdFiEEyfRwcJbPn2bkNd1jI5Wq4j2SS/EFAmjftiIACgkQI5Wq4j2S
+S/FJeA//R35TGd/VSE1WUM0gq2VX7MjMKNMR0nIuWoMj8iiE6OYYAjBlk2YMCbmj
+/8ff2RIP16cKuQQ6F7CMdQDYMJ7+PaXEQnwngMOL+MX1Yi0PS8L2LNPVDICJHwAT
+boVa5BNYf0Vd1roRM9K5GVN7GnKa5595IUR/E6raky89Llaho4JJ7TEbmAfPRMeY
+ZqOO6DOh2YGTbeIbeSTb7eYmH5XccG/pw/o4JmvzwHf99rdy5AdacIrygIj3aIeM
+7zSMHOAKFT806czXdl4g7SABqmR6asMckQWG//yk0djXek4rmi/OkazY8P3u2+pn
+ZAL0yaaT1j4HTs/bIhCBsnKYHch/8zcAWv3ca4D7YsYsXNRwijKQP4jkjH3bVjsL
+FiAVR4oaEyLSV2avm0BQcOkKJMRCHSIdXb6Y/D14KWZVZPEaEmkPjylkBXWkcon1
+gAnHAm61jXDx5Bu3D4kgBy1cepvHQXXoSUoT/VCr2AM86BXZUYanKcJ0/Jcd/9dJ
+30Zl17r96wERB05y871RS9msRcO7uM36NizeRmqkJttTpxlBuptCk5ZuI1zkD5w4
+dioYizhm7A2sKjNStCeYxnsAgmz6JLrZAJqNjYNWH4L8IaDxoWXZUMtT4w57fjTO
+FPSR6AFYlA8rgHdVyVcYQM+0FvZ9LeGpjWiT2l2pmQMcHEyPtOA=
+=dkQn
 -----END PGP SIGNATURE-----
