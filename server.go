@@ -52,6 +52,8 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/admin-api/logout", s.handleAdminLogout)
 	mux.HandleFunc("/admin-api/me", s.handleAdminMe)
 	mux.HandleFunc("/admin-api/stats", s.handleAdminStats)
+	mux.HandleFunc("/admin-api/users", s.handleAdminUsers)
+	mux.HandleFunc("/admin-api/users/", s.handleAdminUsers)
 	mux.HandleFunc("/admin-api/collections", s.handleAdminCollections)
 	mux.HandleFunc("/admin-api/collections/", s.handleAdminCollectionFields)
 	mux.HandleFunc("/admin-api/items/", s.handleAdminItems)
@@ -134,6 +136,94 @@ func (s *Server) handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
+}
+
+func (s *Server) handleAdminUsers(w http.ResponseWriter, r *http.Request) {
+	username, err := s.validateJWTToken(r)
+	if err != nil {
+		s.sendJSONError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := s.db.GetUserByUsername(username)
+	if err != nil || user == nil {
+		s.sendJSONError(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	path := strings.TrimPrefix(r.URL.Path, "/admin-api/users")
+	if path == "" || path == "/" {
+		switch r.Method {
+		case http.MethodGet:
+			users, err := s.db.GetUsers()
+			if err != nil {
+				s.sendJSONError(w, "Failed to fetch users", http.StatusInternalServerError)
+				return
+			}
+
+			type UserResponse struct {
+				ID       int    `json:"id"`
+				Username string `json:"username"`
+				Email    string `json:"email"`
+				Role     string `json:"role"`
+			}
+
+			var response []UserResponse
+			for _, u := range users {
+				resp := UserResponse{
+					ID:       u.ID,
+					Username: u.Username,
+					Role:     u.Role,
+				}
+				if u.Email.Valid {
+					resp.Email = u.Email.String
+				}
+				response = append(response, resp)
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(response)
+
+		case http.MethodPost:
+			var req struct {
+				Username string `json:"username"`
+				Password string `json:"password"`
+				Email    string `json:"email"`
+				Role     string `json:"role"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+				s.sendJSONError(w, "Invalid request body", http.StatusBadRequest)
+				return
+			}
+
+			if err := s.db.CreateUser(req.Username, req.Password, req.Email, req.Role); err != nil {
+				s.sendJSONError(w, "Failed to create user", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusCreated)
+
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	} else {
+		if r.Method == http.MethodDelete {
+			id, err := strconv.Atoi(strings.TrimPrefix(path, "/"))
+			if err != nil {
+				s.sendJSONError(w, "Invalid user ID", http.StatusBadRequest)
+				return
+			}
+
+			if err := s.db.DeleteUser(id); err != nil {
+				s.sendJSONError(w, "Failed to delete user", http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusNoContent)
+		} else {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}
 }
 
 func (s *Server) handleAdminLogout(w http.ResponseWriter, r *http.Request) {
