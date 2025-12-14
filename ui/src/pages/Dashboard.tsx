@@ -16,6 +16,25 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      // View Transition is handled by Sidebar, just sync state here
+      if (document.startViewTransition) {
+        document.startViewTransition(() => {
+          setIsDesktop(e.matches);
+        });
+      } else {
+        setIsDesktop(e.matches);
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
 
   useEffect(() => {
     async function loadUser() {
@@ -103,12 +122,15 @@ export function Dashboard() {
           <div className="flex justify-between items-center h-20 px-6">
             <div className="flex items-center">
               {/* Hamburger menu button - mobile only */}
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden mr-4 p-2 border-4 border-gray-400 hover:border-black transition-colors"
-              >
-                <Icon name="menu" className="w-6 h-6" />
-              </button>
+              {!isDesktop && (
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="mr-4 p-2 border-4 border-gray-400 hover:border-black transition-colors"
+                  style={{ viewTransitionName: 'hamburger' }}
+                >
+                  <Icon name="menu" className="w-6 h-6" />
+                </button>
+              )}
               <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
                 {currentPage}
               </h1>

@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* View Transition customizations */
+::view-transition-old(sidebar),
+::view-transition-new(sidebar) {
+  animation-duration: 300ms;
+}
+
+::view-transition-old(hamburger),
+::view-transition-new(hamburger) {
+  animation-duration: 300ms;
+}
+
+/* Crossfade for the whole page during layout transition */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+}
+
 /* Custom utilities for flat design */
 @layer utilities {
   .input-flat {
