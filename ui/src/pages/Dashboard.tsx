@@ -7,6 +7,7 @@ import { lazy, Suspense } from 'preact/compat';
 // Dynamic imports for code splitting
 const Collections = lazy(() => import('./Collections').then(m => ({ default: m.Collections })));
 const CollectionDetail = lazy(() => import('./CollectionDetail').then(m => ({ default: m.CollectionDetail })));
+const ItemEdit = lazy(() => import('./ItemEdit').then(m => ({ default: m.ItemEdit })));
 const Users = lazy(() => import('./Users').then(m => ({ default: m.Users })));
 const Settings = lazy(() => import('./Settings').then(m => ({ default: m.Settings })));
 import { Router, navigate } from '../router/Router';
@@ -103,6 +104,8 @@ export function Dashboard() {
     { pattern: '/admin/collections', component: () => <Collections /> },
     { pattern: '/admin/collections/:slug', component: (params?: Record<string, string>) =>
       <CollectionDetail slug={params?.slug || ''} /> },
+    { pattern: '/admin/collections/:slug/:id/edit', component: (params?: Record<string, string>) =>
+      <ItemEdit collectionSlug={params?.slug || ''} itemId={params?.id || ''} /> },
     { pattern: '/admin/users', component: () => <Users /> },
     { pattern: '/admin/settings', component: () => <Settings /> },
   ];

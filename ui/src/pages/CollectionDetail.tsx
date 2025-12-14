@@ -3,6 +3,7 @@ import { adminAPI } from '../api/admin';
 import { FieldComponent } from '../fields';
 import { Icon } from '../components/Icon';
 import { Dropdown, DropdownItem } from '../components/Dropdown';
+import { navigate } from '../router/Router';
 
 interface Collection {
   id: number;
@@ -44,7 +45,6 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -136,12 +136,7 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
   };
 
   const handleEditItem = (item: Item) => {
-    setFormData({
-      ...item.data,
-      slug: item.slug || '',
-      status: item.status || 'draft'
-    });
-    setEditingItem(item);
+    navigate(`/admin/collections/${slug}/${item.id}/edit`);
   };
 
   const handleSubmit = async (e: Event) => {
@@ -151,23 +146,14 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
 
     try {
       // Extract slug and status from formData, leave only field data
-      const { slug, status, ...fieldData } = formData;
+      const { slug: itemSlug, status, ...fieldData } = formData;
 
-      if (editingItem) {
-        await adminAPI.updateItem(editingItem.id, {
-          slug: slug,
-          data: fieldData,
-          status: status || 'draft'
-        });
-        setEditingItem(null);
-      } else {
-        await adminAPI.createItem(collection.id, {
-          slug: slug,
-          data: fieldData,
-          status: status || 'draft'
-        });
-        setShowCreateForm(false);
-      }
+      await adminAPI.createItem(collection.id, {
+        slug: itemSlug,
+        data: fieldData,
+        status: status || 'draft'
+      });
+      setShowCreateForm(false);
 
       await loadCollection();
     } catch (error) {
@@ -303,10 +289,10 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
       </div>
 
       <div className="space-y-6">
-        {(showCreateForm || editingItem) && (
+        {showCreateForm && (
           <div className="card-flat">
             <h3 className="text-xl font-black text-gray-900 mb-6 uppercase tracking-tight">
-              {editingItem ? 'Edit Item' : 'Create New Item'}
+              Create New Item
             </h3>
             <form onSubmit={handleSubmit}>
               <div className="space-y-6">
@@ -368,7 +354,6 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
                   type="button"
                   onClick={() => {
                     setShowCreateForm(false);
-                    setEditingItem(null);
                     setFormData({});
                   }}
                   className="btn-secondary"
@@ -381,7 +366,7 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
                   disabled={!isFormValid()}
                   style={{ opacity: isFormValid() ? 1 : 0.5 }}
                 >
-                  {editingItem ? 'Save Changes' : 'Create Item'}
+                  Create Item
                 </button>
               </div>
             </form>

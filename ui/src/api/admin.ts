@@ -259,6 +259,18 @@ class AdminAPI {
     return await response.json();
   }
 
+  async getItem(itemId: number): Promise<{ id: number; collectionId: number; slug?: string; data: Record<string, any>; status: string; createdAt: string; updatedAt: string }> {
+    const response = await fetch(`${this.baseURL}/items/${itemId}`, {
+      headers: this.getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch item');
+    }
+
+    return await response.json();
+  }
+
   async createItem(collectionId: number, item: { slug?: string; data: Record<string, any>; status?: string }): Promise<{ id: number; collectionId: number; slug?: string; data: Record<string, any>; status: string; createdAt: string; updatedAt: string }> {
     const response = await fetch(`${this.baseURL}/items/collection/${collectionId}`, {
       method: 'POST',
