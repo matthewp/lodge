@@ -64,12 +64,16 @@ func (s *Server) Start() error {
 	// Public API routes (for CMS content access)
 	mux.HandleFunc("/api/collections/", s.handleAPICollections)
 
-	// Static files
-	uiFS, err := fs.Sub(uiFiles, "ui/dist")
-	if err != nil {
-		return fmt.Errorf("failed to create UI filesystem: %w", err)
+	// Static files - serve from disk in dev mode, embedded files in production
+	if isDevelopmentMode() {
+		mux.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.Dir("ui/dist"))))
+	} else {
+		uiFS, err := fs.Sub(uiFiles, "ui/dist")
+		if err != nil {
+			return fmt.Errorf("failed to create UI filesystem: %w", err)
+		}
+		mux.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.FS(uiFS))))
 	}
-	mux.Handle("/dist/", http.StripPrefix("/dist/", http.FileServer(http.FS(uiFS))))
 
 	// Serve index.html for all other routes (SPA routing)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +83,11 @@ func (s *Server) Start() error {
 			return
 		}
 		w.Header().Set("Content-Type", "text/html")
-		w.Write(indexHTML)
+		if isDevelopmentMode() {
+			http.ServeFile(w, r, "ui/index.html")
+		} else {
+			w.Write(indexHTML)
+		}
 	})
 
 	addr := fmt.Sprintf(":%d", s.port)
