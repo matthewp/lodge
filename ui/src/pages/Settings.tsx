@@ -114,13 +114,13 @@ export function Settings() {
               <p className="text-sm text-green-700 mb-3 font-medium">
                 Make sure to copy your API key now. You won't be able to see it again!
               </p>
-              <div className="flex items-center space-x-3">
-                <code className="flex-1 p-3 bg-white border-4 border-green-600 text-green-900 font-mono font-bold">
+              <div className="flex items-center space-x-3 min-w-0">
+                <code className="flex-1 min-w-0 p-3 bg-white border-4 border-green-600 text-green-900 font-mono font-bold overflow-hidden text-ellipsis whitespace-nowrap">
                   {createdKey}
                 </code>
                 <button
                   onClick={() => copyToClipboard(createdKey)}
-                  className={`px-4 py-3 border-4 font-bold uppercase text-sm transition-colors ${
+                  className={`flex-shrink-0 px-4 py-3 border-4 font-bold uppercase text-sm transition-colors ${
                     copyState === 'copied'
                       ? 'border-green-600 bg-green-600 text-white'
                       : 'border-green-600 text-green-600 hover:bg-green-600 hover:text-white'
