@@ -27,6 +27,8 @@ interface MarkdownFieldProps {
 export function MarkdownField({ name, label, value, placeholder, required, onChange }: MarkdownFieldProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const editorInstanceRef = useRef<any>(null);
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   // Get the markdown string whether value is string or MarkdownValue
   const getMarkdownString = (val: MarkdownValue | string): string => {
@@ -69,7 +71,7 @@ export function MarkdownField({ name, label, value, placeholder, required, onCha
           hooks: {
             afterUpdate: (doc: string) => {
               if (mounted) {
-                onChange({
+                onChangeRef.current({
                   md: doc,
                   html: compileMarkdown(doc)
                 });
