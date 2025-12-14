@@ -15,6 +15,7 @@ export function Dashboard() {
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function loadUser() {
@@ -89,13 +90,25 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-white flex">
-      <Sidebar currentPage={currentPage} onNavigate={handleNavigate} />
+      <Sidebar
+        currentPage={currentPage}
+        onNavigate={handleNavigate}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top navigation */}
         <nav className="bg-white border-b-4 border-gray-800">
           <div className="flex justify-between items-center h-20 px-6">
-            <div>
+            <div className="flex items-center">
+              {/* Hamburger menu button - mobile only */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden mr-4 p-2 border-4 border-gray-400 hover:border-black transition-colors"
+              >
+                <Icon name="menu" className="w-6 h-6" />
+              </button>
               <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">
                 {currentPage}
               </h1>

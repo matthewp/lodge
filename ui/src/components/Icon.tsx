@@ -54,6 +54,16 @@ export function Icon({ name, className = "w-5 h-5" }: IconProps) {
       <svg className={className} viewBox="0 0 24 24" fill="currentColor">
         <path d="M16.0037 9.41421L7.39712 18.0208L5.98291 16.6066L14.5895 8H7.00373V6H18.0037V17H16.0037V9.41421Z"></path>
       </svg>
+    ),
+    menu: (
+      <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 4H21V6H3V4ZM3 11H21V13H3V11ZM3 18H21V20H3V18Z"></path>
+      </svg>
+    ),
+    x: (
+      <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 10.5858L16.9497 5.63604L18.364 7.05025L13.4142 12L18.364 16.9497L16.9497 18.364L12 13.4142L7.05025 18.364L5.63604 16.9497L10.5858 12L5.63604 7.05025L7.05025 5.63604L12 10.5858Z"></path>
+      </svg>
     )
   };
 
