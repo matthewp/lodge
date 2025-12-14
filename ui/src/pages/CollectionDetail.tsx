@@ -136,7 +136,11 @@ export function CollectionDetail({ slug }: CollectionDetailProps) {
   };
 
   const handleEditItem = (item: Item) => {
-    setFormData(item.data);
+    setFormData({
+      ...item.data,
+      slug: item.slug || '',
+      status: item.status || 'draft'
+    });
     setEditingItem(item);
   };
 
