@@ -67,6 +67,7 @@ export function MarkdownField({ name, label, value, placeholder, required, onCha
           placeholder: placeholder || "Write your markdown here...",
           interface: {
             attribution: false, // Hide "powered by ink-mde"
+            appearance: 'light',
           },
           hooks: {
             afterUpdate: (doc: string) => {
