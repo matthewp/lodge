@@ -100,3 +100,21 @@ export function useParams() {
 
   return params;
 }
+
+export function useCurrentPath() {
+  const [path, setPath] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const handleChange = () => {
+      setPath(window.location.pathname);
+    };
+
+    window.navigation.addEventListener('currententrychange', handleChange);
+
+    return () => {
+      window.navigation.removeEventListener('currententrychange', handleChange);
+    };
+  }, []);
+
+  return path;
+}

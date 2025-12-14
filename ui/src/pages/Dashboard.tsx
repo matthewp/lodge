@@ -10,16 +10,24 @@ const CollectionDetail = lazy(() => import('./CollectionDetail').then(m => ({ de
 const ItemEdit = lazy(() => import('./ItemEdit').then(m => ({ default: m.ItemEdit })));
 const Users = lazy(() => import('./Users').then(m => ({ default: m.Users })));
 const Settings = lazy(() => import('./Settings').then(m => ({ default: m.Settings })));
-import { Router, navigate } from '../router/Router';
+import { Router, navigate, useCurrentPath } from '../router/Router';
+
+function getPageFromPath(path: string): string {
+  if (path === '/admin/collections') return 'collections';
+  if (path === '/admin/users') return 'users';
+  if (path === '/admin/settings') return 'settings';
+  return 'dashboard';
+}
 
 export function Dashboard() {
   const [user, setUser] = useState<{ username: string; role: string } | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(() =>
     typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches
   );
+  const currentPath = useCurrentPath();
+  const currentPage = getPageFromPath(currentPath);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
@@ -53,29 +61,6 @@ export function Dashboard() {
     }
 
     loadUser();
-  }, []);
-
-  useEffect(() => {
-    // Update current page based on URL
-    const updatePageFromURL = () => {
-      const path = window.location.pathname;
-      if (path === '/admin/collections') setCurrentPage('collections');
-      else if (path === '/admin/users') setCurrentPage('users');
-      else if (path === '/admin/settings') setCurrentPage('settings');
-      else setCurrentPage('dashboard');
-    };
-
-    updatePageFromURL();
-
-    const handleNavigation = () => {
-      updatePageFromURL();
-    };
-
-    window.addEventListener('popstate', handleNavigation);
-
-    return () => {
-      window.removeEventListener('popstate', handleNavigation);
-    };
   }, []);
 
   const handleLogout = async () => {
