@@ -4,6 +4,15 @@ import { LoginPage } from './pages/Login.tsx';
 import { Dashboard } from './pages/Dashboard.tsx';
 import { adminAPI } from './api/admin';
 
+async function init() {
+  // Only load polyfill if Navigation API is not supported
+  if (!('navigation' in window)) {
+    await import('@virtualstate/navigation/polyfill');
+  }
+
+  render(<App />, document.getElementById('app')!);
+}
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
@@ -43,4 +52,4 @@ function App() {
   return isAuthenticated ? <Dashboard /> : <LoginPage onLoginSuccess={handleLoginSuccess} />;
 }
 
-render(<App />, document.getElementById('app'));
+init();

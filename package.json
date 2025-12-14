@@ -13,6 +13,7 @@
     "build": "node build.js"
   },
   "dependencies": {
+    "@virtualstate/navigation": "^1.0.1-alpha.212",
     "ink-mde": "^0.34.0",
     "marked": "^16.3.0",
     "preact": "^10.24.3"

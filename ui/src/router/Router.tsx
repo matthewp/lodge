@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState, useEffect, useRef } from 'preact/hooks';
 
 interface Route {
   pattern: string;
@@ -12,12 +12,18 @@ interface RouterProps {
 
 export function Router({ routes, fallback }: RouterProps) {
   const [currentRoute, setCurrentRoute] = useState<() => JSX.Element | null>(null);
+  const routesRef = useRef(routes);
+  const fallbackRef = useRef(fallback);
+
+  // Keep refs updated
+  routesRef.current = routes;
+  fallbackRef.current = fallback;
 
   useEffect(() => {
     const matchRoute = () => {
       const path = window.location.pathname;
 
-      for (const route of routes) {
+      for (const route of routesRef.current) {
         const pattern = new URLPattern({ pathname: route.pattern });
         const match = pattern.exec({ pathname: path });
         if (match) {
@@ -28,34 +34,40 @@ export function Router({ routes, fallback }: RouterProps) {
       }
 
       // No route matched
-      if (fallback) {
-        setCurrentRoute(() => fallback);
+      if (fallbackRef.current) {
+        setCurrentRoute(() => fallbackRef.current!);
       } else {
         setCurrentRoute(() => () => <div>404 - Page Not Found</div>);
       }
+    };
+
+    const handleNavigate = (event: NavigateEvent) => {
+      // Only intercept same-origin navigations
+      if (!event.canIntercept || event.hashChange) return;
+
+      event.intercept({
+        handler: () => {
+          matchRoute();
+        }
+      });
     };
 
     // Match route on mount
     matchRoute();
 
     // Listen for navigation events
-    const handleNavigation = () => {
-      matchRoute();
-    };
-
-    window.addEventListener('popstate', handleNavigation);
+    window.navigation.addEventListener('navigate', handleNavigate);
 
     return () => {
-      window.removeEventListener('popstate', handleNavigation);
+      window.navigation.removeEventListener('navigate', handleNavigate);
     };
-  }, [routes, fallback]);
+  }, []);
 
   return currentRoute ? currentRoute() : null;
 }
 
 export function navigate(path: string) {
-  window.history.pushState({}, '', path);
-  window.dispatchEvent(new PopStateEvent('popstate'));
+  window.navigation.navigate(path);
 }
 
 export function useParams() {
@@ -63,7 +75,6 @@ export function useParams() {
 
   useEffect(() => {
     const extractParams = () => {
-      const path = window.location.pathname;
       const searchParams = new URLSearchParams(window.location.search);
       const urlParams: Record<string, string> = {};
 
@@ -76,14 +87,14 @@ export function useParams() {
 
     extractParams();
 
-    const handleNavigation = () => {
+    const handleChange = () => {
       extractParams();
     };
 
-    window.addEventListener('popstate', handleNavigation);
+    window.navigation.addEventListener('currententrychange', handleChange);
 
     return () => {
-      window.removeEventListener('popstate', handleNavigation);
+      window.navigation.removeEventListener('currententrychange', handleChange);
     };
   }, []);
 
